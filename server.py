@@ -921,10 +921,19 @@ def status_payload():
             "last_restart": STATE.get("last_restart", {}).get(t.get("name")),
             "last_test": st.get("time"), "reachable": st.get("ok"),
         })
+    _home_str = str(CFG.get("codex_home") or "").strip()
+    _home = Path(_home_str) if _home_str else None
+    codex_home_exists = bool(_home and _home.exists())
+    _, _home_cands = detect_candidates()
+    _detected = next((c for c in _home_cands if c != _home_str),
+                     _home_cands[0] if _home_cands else "")
     return {
         "ok": True,
         "port": CFG.get("port", 8765),
         "codex_home": CFG.get("codex_home", ""),
+        "codex_home_exists": codex_home_exists,
+        "codex_home_candidates": _home_cands,
+        "codex_home_detected": _detected,
         "catalog_file": CFG.get("catalog_file", "cc-switch-model-catalog.json"),
         "sync_model": CFG.get("sync_model", True),
         "sync_skills": CFG.get("sync_skills", True),

@@ -108,6 +108,14 @@
   .panel-head h2{font-size:24px; font-weight:800; letter-spacing:-.3px; line-height:1.2}
   .panel-head .sub{font-size:13.5px; color:var(--label2); margin-top:3px}
 
+  /* 首启检测提示条 */
+  .warn-banner{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:rgba(255,149,0,.12); border:1px solid rgba(255,149,0,.45);
+    border-radius:var(--radius); padding:13px 16px; margin-bottom:16px}
+  .warn-banner .warn-title{font-weight:700; color:var(--orange); font-size:14px}
+  .warn-banner .warn-text{font-size:13px; color:var(--label2); margin-top:2px; word-break:break-all}
+  .warn-banner .warn-actions{display:flex; gap:8px; flex:none}
+
   /* ============ 卡片 ============ */
   .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; border:1px solid var(--sep)}
   .card + .card{margin-top:14px}
@@ -317,6 +325,18 @@
   <div class="content">
     <div class="content-inner">
 
+      <!-- 首启/路径缺失检测提示 -->
+      <div class="warn-banner" id="homeWarn" style="display:none">
+        <div style="flex:1; min-width:0">
+          <div class="warn-title">⚠ 未找到本地 Codex 文件夹</div>
+          <div class="warn-text" id="homeWarnText"></div>
+        </div>
+        <div class="warn-actions">
+          <button class="btn btn-secondary btn-sm" id="btnUseDetected">使用检测到的路径</button>
+          <button class="btn btn-gray btn-sm" id="btnIgnoreHomeWarn">知道了</button>
+        </div>
+      </div>
+
       <!-- ① 连接服务器 -->
       <section class="panel active" id="panel-step1">
         <div class="panel-head">
@@ -493,6 +513,7 @@ let LOG_SEQ = 0;
 let POLLING = false;
 let PREVIEW_DONE = false;
 let editingName = null;
+let HOME_WARN_DISMISSED = false;
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
@@ -552,8 +573,24 @@ function renderStatus(st) {
     $("sharedBox").textContent = "（尚未提取）";
     $("h2sub").textContent = "从本地 config.toml 抽出可移植键（provider 永不进入）";
   }
+  renderHomeWarn(st);
   renderServers(st);
   renderSteps(st);
+}
+
+function renderHomeWarn(st) {
+  const warn = $("homeWarn");
+  if (!warn) return;
+  if (st.codex_home_exists === false && !HOME_WARN_DISMISSED) {
+    const cur = st.codex_home || "";
+    const cands = (st.codex_home_candidates || []).filter(c => c !== cur);
+    $("homeWarnText").textContent = "当前路径不存在：" + (cur || "(空)") +
+      (cands.length ? "；检测到可用的：" + cands.join("、") : "；且未检测到其他 .codex 文件夹，请手动填写。");
+    $("btnUseDetected").style.display = cands.length ? "" : "none";
+    warn.style.display = "";
+  } else {
+    warn.style.display = "none";
+  }
 }
 
 function stepState(st) {
@@ -931,6 +968,16 @@ $("btnClearLog").onclick = () => { $("log").innerHTML = '<span style="color:var(
 $("btnClearLogTop").onclick = () => { $("log").innerHTML = '<span style="color:var(--label3)">已清空</span>'; };
 $("btnSaveSettings").onclick = saveSettings;
 $("btnDetect").onclick = detectHome;
+$("btnIgnoreHomeWarn").onclick = () => { HOME_WARN_DISMISSED = true; $("homeWarn").style.display = "none"; };
+$("btnUseDetected").onclick = async () => {
+  const cur = STATE ? (STATE.codex_home || "") : "";
+  const cands = (STATE && STATE.codex_home_candidates) || [];
+  const cand = cands.find(c => c !== cur) || cands[0];
+  if (!cand) return;
+  $("inCodexHome").value = cand;
+  HOME_WARN_DISMISSED = true;
+  await saveSettings();
+};
 $("btnClearSel").onclick = () => {
   selected.clear();
   saveSelected(selected);
