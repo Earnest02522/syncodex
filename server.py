@@ -169,7 +169,8 @@ SHARED_KEYS = shared_keys()
 def run(cmd, timeout=120, input_text=None):
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                           input=input_text, errors="replace")
+                           input=input_text, errors="replace",
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         return p.returncode, p.stdout or "", p.stderr or ""
     except subprocess.TimeoutExpired:
         return 124, "", "timeout"
