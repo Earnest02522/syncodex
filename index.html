@@ -2,210 +2,268 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>syncodex · Codex SSH 同步台</title>
 <style>
+  /* ============ iOS 风格设计变量（自动跟随系统深浅色） ============ */
   :root{
-    --bg:#0a0c10; --panel:#10131a; --panel2:#161a24; --panel3:#1c2230;
-    --line:#222838; --line-strong:#2e3648;
-    --text:#e8ebf3; --muted:#8a92a6; --faint:#5c6478;
-    --accent:#2dd4bf; --accent-strong:#0fb5a2; --accent-soft:rgba(45,212,191,.12);
-    --ok:#34d399; --warn:#f5b74d; --err:#f47067; --info:#7aa2f7;
-    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-    --mono:ui-monospace,"Cascadia Code","JetBrains Mono","SF Mono",Consolas,monospace;
-    --r:10px; --r-sm:7px;
-    --shadow:0 12px 34px rgba(0,0,0,.38);
+    --bg:#f2f2f7;
+    --navbg:rgba(242,242,247,.82);
+    --card:#ffffff;
+    --card2:#f8f8fa;
+    --fill:#f2f2f7;
+    --sep:rgba(60,60,67,.14);
+    --sep2:rgba(60,60,67,.32);
+    --label:#000000;
+    --label2:rgba(60,60,67,.62);
+    --label3:rgba(60,60,67,.36);
+    --blue:#007aff; --blue-press:#0060df; --blue-soft:rgba(0,122,255,.10);
+    --green:#34c759; --red:#ff3b30; --orange:#ff9500; --teal:#30b0c7;
+    --shadow:0 1px 3px rgba(0,0,0,.05), 0 10px 30px rgba(0,0,0,.09);
+    --radius:12px;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#000000;
+      --navbg:rgba(0,0,0,.78);
+      --card:#1c1c1e;
+      --card2:#2c2c2e;
+      --fill:#2c2c2e;
+      --sep:rgba(84,84,88,.45);
+      --sep2:rgba(84,84,88,.65);
+      --label:#ffffff;
+      --label2:rgba(235,235,245,.62);
+      --label3:rgba(235,235,245,.32);
+      --blue:#0a84ff; --blue-press:#409cff; --blue-soft:rgba(10,132,255,.14);
+      --green:#30d158; --red:#ff453a; --orange:#ff9f0a; --teal:#40c8e0;
+      --shadow:0 1px 3px rgba(0,0,0,.5), 0 12px 36px rgba(0,0,0,.55);
+    }
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  html{-webkit-text-size-adjust:100%}
   body{
-    background:var(--bg); color:var(--text);
-    font:14px/1.65 var(--sans); letter-spacing:.1px;
-    background-image:
-      radial-gradient(1100px 420px at 78% -10%, rgba(45,212,191,.055), transparent 60%),
-      radial-gradient(900px 380px at 8% -10%, rgba(122,162,247,.05), transparent 60%);
-    background-attachment:fixed;
+    background:var(--bg); color:var(--label);
+    font:16px/1.5 var(--sans); letter-spacing:.1px;
+    -webkit-font-smoothing:antialiased; padding-bottom:40px;
   }
-  ::selection{background:var(--accent-soft); color:var(--accent)}
-  a{color:var(--accent); text-decoration:none}
-  a:hover{text-decoration:underline}
-  code,pre,.mono{font-family:var(--mono)}
-  button{font:inherit; color:var(--text); background:var(--panel2);
-    border:1px solid var(--line-strong); border-radius:var(--r-sm);
-    padding:8px 14px; cursor:pointer; transition:border-color .15s, background .15s, transform .05s}
-  button:hover{border-color:var(--accent); background:var(--panel3)}
-  button:active{transform:translateY(1px)}
-  button:disabled{opacity:.45; cursor:not-allowed; border-color:var(--line)}
-  button.primary{background:var(--accent); border-color:var(--accent); color:#06110f; font-weight:600}
-  button.primary:hover{background:var(--accent-strong); border-color:var(--accent-strong)}
-  button.ghost{background:transparent}
-  button.danger{color:var(--warn); border-color:rgba(245,183,77,.35)}
-  button.danger:hover{border-color:var(--warn)}
-  input[type=text],input[type=password],input[type=number],textarea,select{
-    font:13px/1.5 var(--mono); color:var(--text); background:#0d1017;
-    border:1px solid var(--line-strong); border-radius:var(--r-sm);
-    padding:8px 10px; width:100%; outline:none; transition:border-color .15s}
-  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
-  input::placeholder,textarea::placeholder{color:var(--faint)}
-  .topbar{
-    position:sticky; top:0; z-index:50;
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    padding:14px 26px; backdrop-filter:blur(10px);
-    background:rgba(10,12,16,.82); border-bottom:1px solid var(--line);
-  }
-  .brand{display:flex; align-items:center; gap:12px; min-width:0}
-  .brand svg{flex:none}
-  .wordmark{font-family:var(--mono); font-size:18px; font-weight:700; letter-spacing:.5px}
-  .wordmark em{color:var(--accent); font-style:normal}
-  .tagline{color:var(--faint); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .top-right{display:flex; align-items:center; gap:12px; flex:none}
-  .pill{display:inline-flex; align-items:center; gap:7px; font:12px var(--mono);
-    color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:4px 12px}
-  .pill .dot{width:7px; height:7px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok)}
-  .pill.off .dot{background:var(--err); box-shadow:0 0 8px var(--err)}
-  main{max-width:1180px; margin:0 auto; padding:26px 26px 40px}
+  ::selection{background:var(--blue-soft)}
+  a{color:var(--blue); text-decoration:none}
+  button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+  button:disabled{opacity:.4; cursor:not-allowed}
+  code,pre{font-family:var(--mono)}
+
+  /* ============ 顶部导航：iOS 大标题 ============ */
+  .nav{position:sticky; top:0; z-index:60;
+    background:var(--navbg); backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border-bottom:1px solid var(--sep)}
+  .nav-inner{max-width:760px; margin:0 auto; padding:14px 18px 12px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px}
+  .nav h1{font-size:30px; font-weight:800; letter-spacing:-.4px; line-height:1.15}
+  .nav h1 em{font-style:normal; color:var(--blue)}
+  .nav .tag{color:var(--label2); font-size:13px; margin-top:1px}
+  .nav-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none}
+  .pill{display:inline-flex; align-items:center; gap:6px; font:12px/1 var(--mono); color:var(--label2);
+    background:var(--fill); border:1px solid var(--sep2); border-radius:999px; padding:5px 11px}
+  .pill .dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green)}
+  .pill.off .dot{background:var(--red); box-shadow:0 0 6px var(--red)}
+  .pill.link{text-decoration:none}
+
+  /* ============ 主体 ============ */
+  main{max-width:760px; margin:0 auto; padding:18px 16px 20px}
   section{margin-bottom:26px}
-  .sec-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
-  .sec-head h2{font-size:13px; font-weight:600; color:var(--muted); letter-spacing:1.2px; text-transform:uppercase}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r)}
-  /* flow bar */
-  .flowbar{display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:14px 18px}
-  .steps{display:flex; align-items:center; gap:8px}
-  .step{display:flex; align-items:center; gap:8px; color:var(--faint); font-size:12.5px; white-space:nowrap}
-  .step .n{width:22px; height:22px; border-radius:50%; border:1px solid var(--line-strong);
-    display:inline-flex; align-items:center; justify-content:center; font:11px var(--mono); color:var(--muted)}
-  .step.on{color:var(--text)}
-  .step.on .n{background:var(--accent-soft); border-color:var(--accent); color:var(--accent)}
-  .step.done .n{background:var(--accent); border-color:var(--accent); color:#06110f}
-  .step .bar{width:22px; height:1px; background:var(--line-strong)}
-  .flow-actions{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
-  .flow-actions .primary{box-shadow:0 4px 18px rgba(45,212,191,.25)}
-  /* server list */
-  .server-list{display:grid; gap:10px}
-  .server-card{
-    display:flex; align-items:flex-start; gap:14px; padding:14px 16px;
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--r);
-    cursor:pointer; transition:border-color .15s, background .15s; position:relative;
-  }
-  .server-card:hover{border-color:var(--line-strong); background:var(--panel2)}
-  .server-card.sel{border-color:var(--accent); background:linear-gradient(180deg, rgba(45,212,191,.05), transparent 55%)}
-  .srv-check{position:absolute; opacity:0; pointer-events:none}
-  .check{flex:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--line-strong);
-    background:#0d1017; margin-top:2px; display:inline-flex; align-items:center; justify-content:center; transition:.15s}
-  .server-card.sel .check{background:var(--accent); border-color:var(--accent)}
-  .server-card.sel .check::after{content:""; width:9px; height:5px; border-left:2px solid #06110f; border-bottom:2px solid #06110f;
-    transform:rotate(-45deg) translate(1px,-1px)}
-  .srv-main{flex:1; min-width:0}
-  .srv-name{display:flex; align-items:center; gap:9px; font:600 14.5px var(--mono)}
-  .led{width:8px; height:8px; border-radius:50%; background:var(--faint); flex:none}
-  .led.ok{background:var(--ok); box-shadow:0 0 8px var(--ok)}
-  .led.err{background:var(--err); box-shadow:0 0 8px var(--err)}
-  .srv-meta{font:12.5px var(--mono); color:var(--muted); margin-top:3px; word-break:break-all}
-  .srv-badges{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
-  .badge{font:11px var(--mono); color:var(--muted); background:var(--panel2); border:1px solid var(--line);
-    border-radius:999px; padding:1px 9px}
-  .badge.auth-key{color:var(--info); border-color:rgba(122,162,247,.35)}
-  .badge.auth-pass{color:var(--warn); border-color:rgba(245,183,77,.35)}
-  .badge.need-pk{color:var(--err); border-color:rgba(244,112,103,.4)}
-  .srv-actions{display:flex; gap:6px; flex:none; opacity:0; transition:opacity .15s}
-  .server-card:hover .srv-actions{opacity:1}
-  .icon-btn{padding:5px 10px; font-size:12px; background:transparent}
-  .add-card{
-    border:1.5px dashed var(--line-strong); border-radius:var(--r); padding:18px;
-    text-align:center; color:var(--muted); cursor:pointer; background:transparent; width:100%;
-    font:13.5px var(--sans); transition:border-color .15s,color .15s;
-  }
-  .add-card:hover{border-color:var(--accent); color:var(--accent)}
-  .empty-tip{color:var(--faint); font-size:13px; padding:6px 2px}
-  /* settings */
-  details.settings{border:1px solid var(--line); border-radius:var(--r); background:var(--panel)}
-  details.settings summary{cursor:pointer; padding:14px 18px; font-size:13px; font-weight:600;
-    color:var(--muted); letter-spacing:1.2px; text-transform:uppercase; list-style:none}
-  details.settings summary::-webkit-details-marker{display:none}
-  details.settings summary::before{content:"▸ "; color:var(--accent)}
-  details.settings[open] summary::before{content:"▾ "}
-  .settings-body{padding:4px 18px 18px; display:grid; gap:16px}
-  .set-row{display:grid; grid-template-columns:minmax(220px,1fr) 2fr; gap:12px; align-items:center}
-  .set-row label{color:var(--muted); font-size:13px}
-  .set-row .hint{color:var(--faint); font-size:11.5px; margin-top:2px}
-  .inline{display:flex; gap:8px; align-items:center}
-  .toggle{display:flex; align-items:center; gap:10px; color:var(--text); font-size:13px; cursor:pointer}
-  .toggle input{display:none}
-  .toggle .tk{width:36px; height:20px; border-radius:999px; background:var(--panel3); border:1px solid var(--line-strong);
-    position:relative; transition:.18s; flex:none}
-  .toggle .tk::after{content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%;
-    background:var(--muted); transition:.18s}
-  .toggle input:checked + .tk{background:var(--accent-soft); border-color:var(--accent)}
-  .toggle input:checked + .tk::after{left:18px; background:var(--accent)}
-  .toggles{display:flex; flex-wrap:wrap; gap:18px}
-  /* preview */
-  .diffbox{display:grid; gap:10px}
-  .diff-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
-  .diff-head{display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; flex-wrap:wrap}
-  .diff-head:hover{background:var(--panel2)}
-  .diff-name{font:600 13.5px var(--mono)}
-  .diff-host{font:12px var(--mono); color:var(--muted)}
-  .diff-chips{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap}
-  .chip{font:11px var(--mono); border-radius:999px; padding:1px 9px; border:1px solid var(--line)}
-  .chip.ok{color:var(--ok); border-color:rgba(52,211,153,.4)}
-  .chip.warn{color:var(--warn); border-color:rgba(245,183,77,.4)}
-  .chip.err{color:var(--err); border-color:rgba(244,112,103,.4)}
-  .chip.mut{color:var(--muted)}
-  .diff-body{padding:0 16px 14px; display:grid; gap:12px}
-  .diff-lbl{font:11px var(--mono); color:var(--faint); letter-spacing:.6px; margin-bottom:4px}
-  .diff-pre{background:#0c0f15; border:1px solid var(--line); border-radius:var(--r-sm);
-    padding:10px 12px; font:12px/1.6 var(--mono); overflow:auto; max-height:300px; white-space:pre-wrap; word-break:break-all}
-  .diff-pre .dl{color:var(--err); background:rgba(244,112,103,.07)}
-  .diff-pre .al{color:var(--ok); background:rgba(52,211,153,.07)}
-  .diff-pre .hl{color:var(--faint)}
-  .diff-pre .note{color:var(--muted)}
-  /* log */
-  .log{background:#0a0d12; border:1px solid var(--line); border-radius:var(--r);
-    height:280px; overflow:auto; padding:12px 14px; font:12px/1.75 var(--mono)}
-  .log .t{color:var(--faint); margin-right:8px}
-  .log .tg{color:var(--accent); margin-right:6px}
-  .log .l-info{color:#9fb4e8}
-  .log .l-ok{color:var(--ok)}
-  .log .l-warn{color:var(--warn)}
-  .log .l-err{color:var(--err)}
+  .sec-title{font-size:13px; font-weight:600; color:var(--label2); letter-spacing:.4px; margin:0 18px 7px; text-transform:uppercase}
+  .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    overflow:hidden; border:1px solid var(--sep)}
+  .card + .card{margin-top:14px}
+
+  /* ============ 步骤条（iOS 引导式） ============ */
+  .stepper{padding:16px 14px 15px}
+  .steps{display:flex; align-items:flex-start}
+  .step{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; min-width:0}
+  .step .node{width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font:600 14px var(--mono); color:var(--label3); border:1.5px solid var(--sep2); background:var(--card);
+    transition:all .2s}
+  .step .node svg{width:16px; height:16px; display:none}
+  .step .t{font-size:12.5px; color:var(--label3); white-space:nowrap}
+  .step.cur .node{background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(0,122,255,.35)}
+  .step.cur .t{color:var(--label); font-weight:600}
+  .step.done .node{background:var(--green); border-color:var(--green); color:#fff}
+  .step.done .node svg{display:block}
+  .step.done .node span{display:none}
+  .step.done .t{color:var(--label2)}
+  .bar{flex:1; height:2px; background:var(--sep2); margin-top:15px; border-radius:2px; position:relative}
+  .bar.fill{background:var(--green)}
+  @media (max-width:560px){ .step .t{font-size:11px} .nav h1{font-size:26px} }
+
+  /* ============ 分组列表（iOS Settings 风格） ============ */
+  .list{display:flex; flex-direction:column}
+  .row{display:flex; align-items:center; gap:12px; padding:13px 16px; min-height:56px; position:relative}
+  .row + .row::before{content:""; position:absolute; top:0; left:16px; right:0; height:1px; background:var(--sep)}
+  .row.pad-left::before{left:60px}
+  .row .main{flex:1; min-width:0}
+  .row .title{font-size:17px; font-weight:500}
+  .row .sub{font-size:13px; color:var(--label2); margin-top:1px; word-break:break-all}
+  .row .mono{font-family:var(--mono); font-size:13px}
+  .row .trail{flex:none; color:var(--label3); font-size:13px}
+  .chev{color:var(--label3); font-size:18px; font-family:var(--mono); flex:none}
+
+  /* 服务器行 */
+  .srv-row{cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .12s}
+  .srv-row:hover{background:var(--card2)}
+  .srv-row.sel{background:var(--blue-soft)}
+  .check-circle{flex:none; width:23px; height:23px; border-radius:50%; border:1.5px solid var(--sep2); display:flex; align-items:center; justify-content:center; transition:all .15s}
+  .srv-row.sel .check-circle{background:var(--blue); border-color:var(--blue)}
+  .srv-row.sel .check-circle::after{content:""; width:11px; height:6px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg) translate(1px,-1px)}
+  .led{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--label3); vertical-align:1px; margin-left:6px}
+  .led.ok{background:var(--green)} .led.err{background:var(--red)}
+  .srv-name{font-size:17px; font-weight:600; font-family:var(--mono)}
+  .srv-meta{font-size:13px; color:var(--label2); font-family:var(--mono); margin-top:2px; word-break:break-all}
+  .badges{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px}
+  .badge{font:11px var(--mono); color:var(--label2); background:var(--fill); border-radius:999px; padding:2px 8px; border:1px solid var(--sep)}
+  .badge.b-blue{color:var(--blue); border-color:rgba(0,122,255,.4)}
+  .badge.b-orange{color:var(--orange); border-color:rgba(255,149,0,.45)}
+  .badge.b-red{color:var(--red); border-color:rgba(255,59,48,.4)}
+  .badge.b-green{color:var(--green); border-color:rgba(52,199,89,.4)}
+  .srv-tools{display:flex; gap:4px; flex:none}
+  .icon-btn{width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:var(--label2); font-size:16px}
+  .icon-btn:hover{background:var(--fill); color:var(--blue)}
+  .row-add{color:var(--blue); font-weight:500; justify-content:flex-start; cursor:pointer}
+  .row-add:hover{background:var(--card2)}
+  .row-add .plus{font-size:20px; font-weight:600; margin-right:2px}
+
+  /* 空状态 */
+  .empty{padding:20px 18px; text-align:center; color:var(--label2); font-size:14px}
+
+  /* ============ 按钮（iOS 风格） ============ */
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px;
+    padding:0 18px; border-radius:12px; font-size:16px; font-weight:600; transition:background .12s, transform .05s}
+  .btn:active{transform:scale(.985)}
+  .btn-primary{background:var(--blue); color:#fff; width:100%; box-shadow:0 3px 12px rgba(0,122,255,.35)}
+  .btn-primary:hover{background:var(--blue-press)}
+  .btn-secondary{background:var(--fill); color:var(--label)}
+  .btn-secondary:hover{background:var(--sep)}
+  .btn-gray{background:var(--card2); color:var(--label2)}
+  .btn-danger{background:var(--card); color:var(--orange); border:1px solid var(--sep2)}
+  .btn-danger:hover{background:var(--fill)}
+  .btn-sm{min-height:36px; padding:0 14px; font-size:14px; border-radius:10px}
+  .btn-num{display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--blue); color:#fff; font:600 13px var(--mono); align-items:center; justify-content:center; flex:none}
+  .btn-row{display:flex; gap:9px; flex-wrap:wrap}
+  .btn-row .btn{flex:1; min-width:120px}
+  .btn-row .btn.block{flex:1 1 100%}
+
+  /* 步骤卡片内部 */
+  .step-card{padding:0}
+  .step-head{display:flex; align-items:center; gap:10px; padding:15px 16px 4px}
+  .step-head .num{width:26px; height:26px; border-radius:50%; background:var(--blue); color:#fff; font:600 14px var(--mono); display:flex; align-items:center; justify-content:center; flex:none}
+  .step-head .num.ok{background:var(--green)}
+  .step-head .tt{font-size:17px; font-weight:700}
+  .step-head .st{font-size:12.5px; color:var(--label2); margin-top:1px}
+  .step-body{padding:12px 16px 16px; display:flex; flex-direction:column; gap:12px}
+  .hint{font-size:13px; color:var(--label2); line-height:1.55}
+
+  /* 共享配置预览 */
+  pre.code{background:var(--fill); border:1px solid var(--sep); border-radius:10px; padding:12px;
+    font:12.5px/1.7 var(--mono); overflow:auto; white-space:pre-wrap; word-break:break-all; color:var(--label)}
+  details.code-box summary{cursor:pointer; font-size:13.5px; color:var(--blue); padding:2px 0; list-style:none}
+  details.code-box summary::-webkit-details-marker{display:none}
+  details.code-box summary::before{content:"▸ "; }
+  details.code-box[open] summary::before{content:"▾ ";}
+
+  /* ============ 差异预览 ============ */
+  .diff-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; border:1px solid var(--sep)}
+  .diff-card + .diff-card{margin-top:12px}
+  .diff-head{display:flex; align-items:center; gap:10px; padding:14px 16px; cursor:pointer; flex-wrap:wrap}
+  .diff-head:hover{background:var(--card2)}
+  .diff-name{font:600 15px var(--mono)}
+  .diff-host{font:12px var(--mono); color:var(--label2)}
+  .diff-chips{margin-left:auto; display:flex; gap:5px; flex-wrap:wrap}
+  .chip{font:11px var(--mono); border-radius:999px; padding:2px 9px; border:1px solid var(--sep)}
+  .chip.ok{color:var(--green); border-color:rgba(52,199,89,.45)}
+  .chip.warn{color:var(--orange); border-color:rgba(255,149,0,.5)}
+  .chip.err{color:var(--red); border-color:rgba(255,59,48,.45)}
+  .chip.mut{color:var(--label2)}
+  .diff-body{padding:0 16px 15px; display:grid; gap:12px}
+  .diff-lbl{font:11px var(--mono); color:var(--label3); letter-spacing:.3px; margin-bottom:4px; text-transform:uppercase}
+  .diff-pre{background:var(--fill); border:1px solid var(--sep); border-radius:10px; padding:10px 12px;
+    font:12px/1.65 var(--mono); overflow:auto; max-height:300px; white-space:pre-wrap; word-break:break-all; color:var(--label)}
+  .diff-pre .dl{color:var(--red); background:rgba(255,59,48,.08)}
+  .diff-pre .al{color:var(--green); background:rgba(52,199,89,.08)}
+  .diff-pre .hl{color:var(--label3)}
+  .diff-pre .note{color:var(--label2)}
+
+  /* ============ 日志 ============ */
+  .log{height:280px; overflow:auto; padding:12px 14px; font:12.5px/1.8 var(--mono); background:var(--card)}
+  .log .t{color:var(--label3); margin-right:8px}
+  .log .tg{color:var(--blue); margin-right:6px}
+  .log .l-info{color:var(--label2)}
+  .log .l-ok{color:var(--green)}
+  .log .l-warn{color:var(--orange)}
+  .log .l-err{color:var(--red)}
   .log .l-line{white-space:pre-wrap; word-break:break-all}
-  .log-empty{color:var(--faint); font:12px var(--mono)}
-  /* modal */
-  .backdrop{position:fixed; inset:0; background:rgba(5,7,10,.66); backdrop-filter:blur(3px);
-    display:flex; align-items:flex-start; justify-content:center; padding:6vh 16px; z-index:100;
-    opacity:0; pointer-events:none; transition:opacity .16s}
+
+  /* ============ iOS 开关 ============ */
+  .toggle{display:flex; align-items:center; gap:12px; flex:1; min-height:44px; cursor:pointer}
+  .toggle input{display:none}
+  .toggle .tk{width:51px; height:31px; border-radius:999px; background:var(--sep2); position:relative; transition:background .2s; flex:none; margin-left:auto}
+  .toggle .tk::after{content:""; position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.25); transition:left .2s}
+  .toggle input:checked + .tk{background:var(--green)}
+  .toggle input:checked + .tk::after{left:22px}
+
+  /* 分段控件 */
+  .seg{display:grid; grid-template-columns:1fr 1fr; background:var(--fill); border-radius:10px; padding:2px; gap:2px}
+  .seg button{padding:8px; border-radius:8px; font-size:14px; font-weight:500; color:var(--label2)}
+  .seg button.on{background:var(--card); color:var(--label); box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+  /* 表单 */
+  .field{margin-bottom:13px}
+  .field label{display:block; font-size:13px; color:var(--label2); margin-bottom:6px}
+  .field .req{color:var(--red)}
+  input[type=text],input[type=password],input[type=number],textarea{
+    font:15px var(--mono); color:var(--label); background:var(--fill); border:none; border-radius:10px;
+    padding:11px 12px; width:100%; outline:none; -webkit-appearance:none; appearance:none}
+  input:focus,textarea:focus{box-shadow:0 0 0 3px var(--blue-soft)}
+  input::placeholder,textarea::placeholder{color:var(--label3)}
+  textarea{font-size:13px; line-height:1.5; resize:vertical}
+  .f2{display:grid; grid-template-columns:1fr 1fr; gap:0 14px}
+  @media (max-width:560px){ .f2{grid-template-columns:1fr} }
+
+  /* ============ iOS Sheet 弹窗 ============ */
+  .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100;
+    display:flex; align-items:flex-end; justify-content:center; padding:0;
+    opacity:0; pointer-events:none; transition:opacity .22s}
   .backdrop.open{opacity:1; pointer-events:auto}
-  .modal{background:var(--panel2); border:1px solid var(--line-strong); border-radius:14px;
-    width:100%; max-width:660px; box-shadow:var(--shadow); transform:translateY(10px) scale(.985);
-    transition:transform .16s; max-height:88vh; display:flex; flex-direction:column}
+  .modal{background:var(--card); width:100%; max-width:640px; border-radius:20px 20px 0 0;
+    box-shadow:var(--shadow); transform:translateY(40px); transition:transform .26s cubic-bezier(.32,.72,0,1);
+    max-height:88vh; display:flex; flex-direction:column}
   .backdrop.open .modal{transform:none}
-  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line)}
-  .modal-head h3{font:600 15px var(--sans)}
-  .modal-close{background:transparent; border:none; font-size:18px; color:var(--muted); padding:2px 8px}
-  .modal-body{padding:18px 20px; overflow:auto; display:grid; gap:13px}
-  .f2{display:grid; grid-template-columns:1fr 1fr; gap:13px}
-  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:5px}
-  .field .req{color:var(--err)}
-  .seg{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line-strong); border-radius:var(--r-sm); overflow:hidden}
-  .seg button{padding:8px; border:none; border-radius:0; background:transparent; color:var(--muted)}
-  .seg button.on{background:var(--accent-soft); color:var(--accent)}
-  .modal-foot{display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--line)}
-  .hintline{font:11.5px var(--mono); color:var(--faint)}
-  /* toast */
-  #toast{position:fixed; top:18px; right:18px; z-index:200; display:flex; flex-direction:column; gap:8px}
-  .toast{background:var(--panel3); border:1px solid var(--line-strong); border-left:3px solid var(--accent);
-    border-radius:8px; padding:10px 14px; font-size:13px; box-shadow:var(--shadow);
-    animation:tin .18s ease; max-width:380px}
-  .toast.ok{border-left-color:var(--ok)} .toast.err{border-left-color:var(--err)} .toast.warn{border-left-color:var(--warn)}
-  @keyframes tin{from{opacity:0; transform:translateX(14px)} to{opacity:1; transform:none}}
-  footer{max-width:1180px; margin:0 auto; padding:0 26px 40px; display:flex; justify-content:space-between;
-    gap:12px; flex-wrap:wrap; color:var(--faint); font-size:12px; border-top:1px solid var(--line); padding-top:18px}
-  @media (max-width:720px){
-    .f2{grid-template-columns:1fr}
-    .set-row{grid-template-columns:1fr}
-    main{padding:18px 14px 30px}
-    .topbar{padding:12px 14px}
-    .tagline{display:none}
+  .grabber{width:38px; height:5px; border-radius:3px; background:var(--sep2); margin:9px auto 4px; flex:none}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:6px 20px 12px; border-bottom:1px solid var(--sep)}
+  .modal-head h3{font-size:18px; font-weight:700}
+  .modal-close{font-size:22px; color:var(--label3); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center}
+  .modal-close:hover{background:var(--fill)}
+  .modal-body{padding:18px 20px 8px; overflow:auto}
+  .modal-foot{display:flex; gap:10px; padding:14px 20px 26px; border-top:1px solid var(--sep)}
+  .modal-foot .btn{flex:1}
+  .hintline{font:12px var(--mono); color:var(--label3); margin:4px 2px 8px}
+  details.adv summary{cursor:pointer; font-size:13.5px; color:var(--blue); padding:4px 0; list-style:none}
+  details.adv summary::-webkit-details-marker{display:none}
+  details.adv summary::before{content:"▸ ";}
+  details.adv[open] summary::before{content:"▾ ";}
+
+  /* Toast */
+  #toast{position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:200;
+    display:flex; flex-direction:column; gap:8px; align-items:center; width:min(92vw,520px)}
+  .toast{background:var(--card); border:1px solid var(--sep2); border-left:4px solid var(--blue);
+    border-radius:12px; padding:12px 16px; font-size:14px; box-shadow:var(--shadow);
+    animation:tin .22s ease; color:var(--label)}
+  .toast.ok{border-left-color:var(--green)} .toast.err{border-left-color:var(--red)} .toast.warn{border-left-color:var(--orange)}
+  @keyframes tin{from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none}}
+  @media (min-width:720px){
+    .backdrop{align-items:center; padding:20px}
+    .modal{border-radius:18px; transform:translateY(10px) scale(.98)}
+    .grabber{display:none}
   }
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation:none!important; transition:none!important}
@@ -213,110 +271,162 @@
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-      <rect x="1.5" y="1.5" width="23" height="23" rx="6" stroke="#2dd4bf" stroke-width="1.6"/>
-      <path d="M8 10h10M8 10l3-3M8 10l3 3" stroke="#2dd4bf" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M18 16H8M18 16l-3-3M18 16l-3 3" stroke="#e8ebf3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+<header class="nav">
+  <div class="nav-inner">
     <div>
-      <div class="wordmark">sync<em>odex</em></div>
-      <div class="tagline">把本地 Codex 配置 / skills / 模型目录同步到 SSH 服务器</div>
+      <h1>sync<em>odex</em></h1>
+      <div class="tag">把本地 Codex 配置 / skills / 模型目录同步到 SSH 服务器</div>
     </div>
-  </div>
-  <div class="top-right">
-    <span class="pill" id="bindPill"><span class="dot"></span><span id="bindTxt">127.0.0.1:—</span></span>
-    <a class="pill" href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener" style="text-decoration:none">GitHub ↗</a>
+    <div class="nav-right">
+      <span class="pill" id="bindPill"><span class="dot"></span><span id="bindTxt">127.0.0.1:—</span></span>
+      <a class="pill link" href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
   </div>
 </header>
 
 <main>
+
+  <!-- 步骤条 -->
   <section>
-    <div class="card flowbar">
+    <div class="card stepper">
       <div class="steps">
-        <div class="step on"><span class="n">1</span> 连接服务器</div><span class="bar"></span>
-        <div class="step" id="st2"><span class="n">2</span> 提取共享配置</div><span class="bar"></span>
-        <div class="step" id="st3"><span class="n">3</span> 预览差异</div><span class="bar"></span>
-        <div class="step" id="st4"><span class="n">4</span> 同步 + 重启</div>
-      </div>
-      <div class="flow-actions">
-        <button id="btnSelectAll" class="ghost">全选</button>
-        <button id="btnTest" class="ghost">测试连接</button>
-        <button id="btnExtract" class="primary">① 提取共享配置</button>
-        <button id="btnPreview">② 预览差异</button>
-        <button id="btnSync">③ 同步到所选</button>
-        <button id="btnRestart" class="danger">重启进程</button>
+        <div class="step" id="st1" data-scroll="sec1"><div class="node"><span>1</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="t">连接</span></div>
+        <div class="bar" id="bar1"></div>
+        <div class="step" id="st2" data-scroll="sec2"><div class="node"><span>2</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="t">提取</span></div>
+        <div class="bar" id="bar2"></div>
+        <div class="step" id="st3" data-scroll="sec3"><div class="node"><span>3</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="t">预览</span></div>
+        <div class="bar" id="bar3"></div>
+        <div class="step" id="st4" data-scroll="sec4"><div class="node"><span>4</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="t">同步</span></div>
       </div>
     </div>
   </section>
 
-  <section>
-    <div class="sec-head">
-      <h2>SSH 服务器</h2>
-      <button id="btnAddServer" class="ghost" style="color:var(--accent)">＋ 添加服务器</button>
+  <!-- ① 连接服务器 -->
+  <section id="sec1">
+    <div class="sec-title">① 连接服务器</div>
+    <div class="card step-card">
+      <div class="step-head">
+        <span class="num" id="s1num">1</span>
+        <div><div class="tt">SSH 服务器</div><div class="st" id="s1st">还没有服务器，点下方「添加服务器」</div></div>
+      </div>
+      <div class="list" id="serverList"></div>
+      <div class="row row-add" id="btnAddServer"><span class="plus">＋</span> 添加服务器</div>
     </div>
-    <div class="server-list" id="serverList"></div>
+    <div class="card" style="margin-top:14px">
+      <div class="list">
+        <div class="row" style="cursor:pointer" id="btnSettingsToggle"><div class="main"><div class="title">本地与同步设置</div><div class="sub" id="settingsSub">本地 Codex 文件夹 · 同步内容</div></div><span class="chev">›</span></div>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <details class="settings" id="settingsPanel">
-      <summary>本地与同步设置</summary>
-      <div class="settings-body">
-        <div class="set-row">
-          <label>本地 Codex 文件夹<span class="hint">（含 config.toml / skills / 模型目录）</span></label>
-          <div class="inline">
-            <input type="text" id="inCodexHome" spellcheck="false" placeholder="C:\Users\you\.codex 或 /home/you/.codex">
-            <button id="btnDetect" class="ghost">自动检测</button>
+  <!-- 本地与同步设置（可展开） -->
+  <section id="secSettings" style="display:none">
+    <div class="sec-title">本地与同步设置</div>
+    <div class="card">
+      <div class="list">
+        <div class="row" style="display:block; padding-bottom:4px">
+          <div class="field" style="margin:0 0 6px"><label>本地 Codex 文件夹 <span class="req">*</span></label>
+            <div style="display:flex; gap:8px">
+              <input type="text" id="inCodexHome" spellcheck="false" placeholder="C:\Users\you\.codex 或 /home/you/.codex">
+              <button class="btn btn-secondary btn-sm" id="btnDetect" style="flex:none">自动检测</button>
+            </div>
           </div>
         </div>
-        <div class="set-row">
-          <label>同步内容<span class="hint">provider 永不进共享段，每台服务器保留自己的</span></label>
-          <div class="toggles">
-            <label class="toggle"><input type="checkbox" id="tgModel"><span class="tk"></span>模型 model</label>
-            <label class="toggle"><input type="checkbox" id="tgSkills"><span class="tk"></span>skills</label>
-            <label class="toggle"><input type="checkbox" id="tgCatalog"><span class="tk"></span>模型目录</label>
-            <label class="toggle"><input type="checkbox" id="tgMirror"><span class="tk"></span>镜像删除远端多余文件</label>
+        <div class="row"><div class="main"><div class="title">同步 model 模型</div><div class="sub">共享键含 model / model_reasoning_effort</div></div><label class="toggle"><input type="checkbox" id="tgModel"><span class="tk"></span></label></div>
+        <div class="row"><div class="main"><div class="title">同步 skills</div><div class="sub">排除桌面内置 .system</div></div><label class="toggle"><input type="checkbox" id="tgSkills"><span class="tk"></span></label></div>
+        <div class="row"><div class="main"><div class="title">同步模型目录</div><div class="sub">cc-switch-model-catalog.json</div></div><label class="toggle"><input type="checkbox" id="tgCatalog"><span class="tk"></span></label></div>
+        <div class="row"><div class="main"><div class="title">镜像删除远端多余文件</div><div class="sub">远端 skills 与本地完全一致（多余文件会被删除）</div></div><label class="toggle"><input type="checkbox" id="tgMirror"><span class="tk"></span></label></div>
+        <div class="row" style="display:block">
+          <div class="field" style="margin:0 0 4px"><label>共享键（进阶，逗号分隔）</label>
+            <input type="text" id="inSharedKeys" spellcheck="false">
           </div>
         </div>
-        <div class="set-row">
-          <label>共享键（进阶）<span class="hint">从本地 config.toml 提取的顶层键，逗号分隔</span></label>
-          <input type="text" id="inSharedKeys" spellcheck="false">
-        </div>
-        <div class="set-row">
-          <label>传输环境<span class="hint">系统 OpenSSH 零依赖；paramiko 仅密码认证需要</span></label>
-          <div class="hintline" id="transportInfo">—</div>
-        </div>
-        <div class="set-row" style="grid-template-columns:1fr">
-          <div style="display:flex; gap:10px; justify-content:flex-end">
-            <button id="btnSaveSettings">保存设置</button>
-          </div>
+        <div class="row"><div class="main"><div class="title">传输环境</div><div class="sub" id="transportInfo">—</div></div></div>
+        <div class="row" style="padding-top:14px; padding-bottom:16px">
+          <button class="btn btn-primary" id="btnSaveSettings" style="min-height:40px">保存设置</button>
         </div>
       </div>
-    </details>
-  </section>
-
-  <section>
-    <div class="sec-head"><h2>同步前预览</h2></div>
-    <div class="diffbox" id="diffBox"><span class="empty-tip">勾选服务器后点「② 预览差异」，这里会显示每台服务器的改动内容。</span></div>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <h2>运行日志</h2>
-      <button id="btnClearLog" class="ghost">清空</button>
     </div>
-    <div class="log" id="log"><span class="log-empty">等待操作…</span></div>
   </section>
+
+  <!-- ② 提取共享配置 -->
+  <section id="sec2">
+    <div class="sec-title">② 提取共享配置</div>
+    <div class="card step-card">
+      <div class="step-head">
+        <span class="num" id="s2num">2</span>
+        <div><div class="tt">提取共享配置</div><div class="st" id="s2st">从本地 config.toml 抽出可移植键（provider 永不进入）</div></div>
+      </div>
+      <div class="step-body">
+        <button class="btn btn-primary" id="btnExtract" style="width:100%">提取共享配置</button>
+        <div class="hint" id="extractNote">生成 config.shared.toml，同步时与服务器自己的 provider 段拼接。</div>
+        <details class="code-box">
+          <summary>查看当前 config.shared.toml</summary>
+          <pre class="code" id="sharedBox" style="margin-top:6px">（尚未提取）</pre>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 预览差异 -->
+  <section id="sec3">
+    <div class="sec-title">③ 预览差异</div>
+    <div class="card step-card">
+      <div class="step-head">
+        <span class="num" id="s3num">3</span>
+        <div><div class="tt">同步前预览</div><div class="st">对比共享配置 / skills / 模型目录，确认后再同步</div></div>
+      </div>
+      <div class="step-body">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnPreview" style="width:100%">预览差异</button>
+        </div>
+        <div id="diffBox" style="display:grid; gap:12px">
+          <div class="hint">勾选上方服务器后点「预览差异」，这里会显示每台的改动。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ 同步 -->
+  <section id="sec4">
+    <div class="sec-title">④ 同步 + 重启</div>
+    <div class="card step-card">
+      <div class="step-head">
+        <span class="num" id="s4num">4</span>
+        <div><div class="tt">同步到所选服务器</div><div class="st" id="s4st">当前未选择服务器</div></div>
+      </div>
+      <div class="step-body">
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="btnSelectAll" style="flex:1">全选</button>
+          <button class="btn btn-secondary" id="btnTest" style="flex:1">测试连接</button>
+        </div>
+        <button class="btn btn-primary" id="btnSync" style="width:100%; min-height:50px; font-size:17px">③ 同步到所选服务器</button>
+        <div class="btn-row">
+          <button class="btn btn-danger" id="btnRestart" style="flex:1">重启远端进程</button>
+          <button class="btn btn-gray" id="btnClearLog" style="flex:1">清空日志</button>
+        </div>
+        <div class="hint" id="syncHint">同步只改配置/skills/模型目录；同步后建议点「重启远端进程」让模型列表立即刷新。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 运行日志 -->
+  <section>
+    <div class="sec-title">运行日志</div>
+    <div class="card" style="overflow:hidden">
+      <div class="log" id="log"><span style="color:var(--label3)">等待操作…</span></div>
+    </div>
+  </section>
+
+  <footer style="text-align:center; color:var(--label3); font-size:12px; padding:6px 0 0">
+    MIT License · 仅监听 127.0.0.1 · 永不同步 auth.json / 密钥
+  </footer>
 </main>
 
-<footer>
-  <span>MIT License · 仅监听 127.0.0.1 · 永不同步 auth.json / 密钥</span>
-  <a href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener">github.com/Earnest02522/syncodex</a>
-</footer>
-
+<!-- 服务器编辑 Sheet -->
 <div class="backdrop" id="modalBackdrop">
   <div class="modal">
+    <div class="grabber"></div>
     <div class="modal-head">
       <h3 id="modalTitle">添加服务器</h3>
       <button class="modal-close" id="btnModalClose">×</button>
@@ -324,37 +434,37 @@
     <div class="modal-body">
       <div class="f2">
         <div class="field"><label>名称 <span class="req">*</span></label><input type="text" id="fName" placeholder="例如 my-server" spellcheck="false"></div>
-        <div class="field"><label>主机 Host <span class="req">*</span></label><input type="text" id="fHost" placeholder="172.18.32.11 或 my-server.local" spellcheck="false"></div>
+        <div class="field"><label>主机 Host <span class="req">*</span></label><input type="text" id="fHost" placeholder="172.18.32.11 或 my-host" spellcheck="false"></div>
         <div class="field"><label>端口</label><input type="number" id="fPort" value="22"></div>
         <div class="field"><label>用户名</label><input type="text" id="fUser" placeholder="root" spellcheck="false"></div>
       </div>
       <div class="field">
         <label>认证方式</label>
         <div class="seg" id="authSeg">
-          <button type="button" data-auth="key" class="on">密钥文件 / ssh-agent</button>
+          <button type="button" data-auth="key" class="on">密钥 / agent</button>
           <button type="button" data-auth="password">密码</button>
         </div>
       </div>
       <div class="f2">
-        <div class="field" id="fKeyWrap"><label>私钥路径</label><input type="text" id="fKey" placeholder="C:\Users\you\.ssh\id_rsa（留空=走 ssh config/agent）" spellcheck="false"></div>
+        <div class="field" id="fKeyWrap"><label>私钥路径</label><input type="text" id="fKey" placeholder="~/.ssh/id_ed25519（留空走 agent）" spellcheck="false"></div>
         <div class="field" id="fPassWrap" style="display:none"><label>密码</label><input type="password" id="fPass" placeholder="服务器登录密码" autocomplete="off"></div>
-        <div class="field" id="fPhraseWrap"><label>私钥口令（可选）</label><input type="password" id="fPhrase" placeholder="私钥本身加密时才填" autocomplete="off"></div>
+        <div class="field" id="fPhraseWrap"><label>私钥口令（可选）</label><input type="password" id="fPhrase" placeholder="私钥本身加密时填写" autocomplete="off"></div>
         <div class="field"><label>远端 .codex 目录 <span class="req">*</span></label><input type="text" id="fCodexDir" placeholder="/home/you/.codex" spellcheck="false"></div>
       </div>
-      <details style="border:1px solid var(--line); border-radius:8px; padding:0 12px">
-        <summary style="cursor:pointer; color:var(--muted); font-size:12.5px; padding:9px 0">高级（node/codex 路径、自定义重启脚本）</summary>
-        <div class="f2" style="padding:6px 0 12px">
-          <div class="field"><label>node 路径覆盖（可选）</label><input type="text" id="fNode" spellcheck="false"></div>
-          <div class="field"><label>codex 路径覆盖（可选）</label><input type="text" id="fCodex" spellcheck="false"></div>
+      <details class="adv">
+        <summary>高级（node / codex 路径覆盖、自定义重启脚本）</summary>
+        <div class="f2" style="margin-top:10px">
+          <div class="field"><label>node 路径覆盖</label><input type="text" id="fNode" spellcheck="false"></div>
+          <div class="field"><label>codex 路径覆盖</label><input type="text" id="fCodex" spellcheck="false"></div>
         </div>
-        <div class="field" style="padding-bottom:12px"><label>自定义重启脚本（可选，整个覆盖默认脚本）</label><textarea id="fRestart" rows="3" spellcheck="false" style="font:12px/1.5 var(--mono)"></textarea></div>
+        <div class="field"><label>自定义重启脚本（整个覆盖默认）</label><textarea id="fRestart" rows="3" spellcheck="false"></textarea></div>
       </details>
-      <div class="hintline" id="modalHint">密码 / 口令会明文保存在本地 config.json（已 gitignore），请勿提交该文件。</div>
+      <div class="hintline">密码 / 口令会明文保存在本地 config.json（已 gitignore），请勿提交。</div>
     </div>
     <div class="modal-foot">
-      <button id="btnTestInModal" class="ghost">测试连接</button>
-      <button id="btnModalCancel" class="ghost">取消</button>
-      <button id="btnModalSave" class="primary">保存</button>
+      <button class="btn btn-secondary" id="btnModalCancel">取消</button>
+      <button class="btn btn-secondary" id="btnTestInModal">测试连接</button>
+      <button class="btn btn-primary" id="btnModalSave">保存</button>
     </div>
   </div>
 </div>
@@ -369,6 +479,8 @@ const SEL_KEY = "syncodex.selected";
 let STATE = null;
 let LOG_SEQ = 0;
 let POLLING = false;
+let PREVIEW_DONE = false;
+let editingName = null;
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
@@ -393,12 +505,11 @@ function loadSelected() {
 function saveSelected(s) { localStorage.setItem(SEL_KEY, JSON.stringify([...s])); }
 let selected = loadSelected();
 
-function selCount() { return selected.size; }
-
+/* ---------------- 渲染 ---------------- */
 function renderStatus(st) {
   STATE = st;
   $("bindTxt").textContent = "127.0.0.1:" + st.port;
-  $("bindPill").classList.toggle("off", false);
+  $("bindPill").classList.remove("off");
   $("inCodexHome").value = st.codex_home || "";
   $("tgModel").checked = !!st.sync_model;
   $("tgSkills").checked = !!st.sync_skills;
@@ -408,73 +519,105 @@ function renderStatus(st) {
   const pk = st.paramiko_available;
   $("transportInfo").textContent =
     "ssh: " + (st.ssh_bin || "ssh") +
-    (pk ? "  ·  paramiko 已安装（支持密码认证）" : "  ·  paramiko 未安装（密钥认证零依赖；密码认证需 pip install paramiko）");
+    (pk ? "  ·  paramiko 已装（支持密码认证）" : "  ·  paramiko 未装（密码认证需 pip install paramiko）");
+  $("settingsSub").textContent = (st.codex_home || "") + " · " + (st.shared_keys || []).length + " 个共享键";
+  if (st.shared_exists) {
+    $("sharedBox").textContent = st.shared || "（空）";
+    $("s2st").textContent = "已提取 ✓ · 共享段只含可移植键，provider 保留在服务器";
+  } else {
+    $("sharedBox").textContent = "（尚未提取）";
+    $("s2st").textContent = "从本地 config.toml 抽出可移植键（provider 永不进入）";
+  }
   renderServers(st);
   renderSteps(st);
 }
 
+function stepState(st) {
+  const s1 = (st.targets || []).length > 0;
+  const s2 = !!st.shared_exists;
+  const s3 = PREVIEW_DONE;
+  const s4 = Object.keys(st.last_sync || {}).length > 0 || (st.targets || []).some(t => t.last_sync);
+  return [s1, s2, s3, s4];
+}
+
 function renderSteps(st) {
-  const s2 = document.querySelector("#st2"), s3 = document.querySelector("#st3"), s4 = document.querySelector("#st4");
-  s2.classList.toggle("on", !!st.shared_exists);
-  s2.querySelector(".n").textContent = st.shared_exists ? "✓" : "2";
+  const done = stepState(st);
+  const nums = ["s1num", "s2num", "s3num", "s4num"];
+  done.forEach((d, i) => {
+    $("st" + (i + 1)).classList.toggle("done", d);
+    const num = $(nums[i]);
+    if (num) { num.textContent = d ? "✓" : String(i + 1); num.classList.toggle("ok", d); }
+    const bar = $("bar" + (i + 1));
+    if (bar) bar.classList.toggle("fill", done[i]);
+  });
+  // 当前步 = 第一个未完成
+  const firstNotDone = done.indexOf(false);
+  for (let i = 0; i < 4; i++) $("st" + (i + 1)).classList.toggle("cur", i === firstNotDone);
+  $("s1st").textContent = (st.targets || []).length
+    ? (st.targets || []).length + " 台服务器已配置"
+    : "还没有服务器，点下方「添加服务器」";
+  const sel = selected.size;
+  $("s4st").textContent = sel ? "已选择 " + sel + " 台：" + [...selected].join("、") : "请先在服务器列表勾选";
+  $("btnSync").disabled = sel === 0;
+  $("btnPreview").disabled = sel === 0;
+  $("btnTest").disabled = sel === 0;
+  $("btnRestart").disabled = sel === 0;
 }
 
 function renderServers(st) {
   const box = $("serverList");
   const list = st.targets || [];
-  if (!list.length) {
-    box.innerHTML = '<div class="empty-tip">还没有配置任何服务器。点右上角「＋ 添加服务器」，填入 SSH 信息（主机/用户名/密钥或密码）和远端 .codex 目录即可。</div>';
-    return;
-  }
   box.innerHTML = "";
+  if (!list.length) {
+    const d = document.createElement("div");
+    d.className = "empty";
+    d.textContent = "还没有配置任何服务器。点下方「添加服务器」填入 SSH 信息即可。";
+    box.appendChild(d);
+  }
   list.forEach(t => {
-    const card = document.createElement("label");
-    card.className = "server-card" + (selected.has(t.name) ? " sel" : "");
+    const row = document.createElement("div");
+    row.className = "srv-row row" + (selected.has(t.name) ? " sel" : "");
     const reachCls = t.reachable === true ? "ok" : (t.reachable === false ? "err" : "");
-    const authCls = t.auth === "password" ? "auth-pass" : "auth-key";
     const authTxt = t.auth === "password" ? "密码" : (t.has_passphrase ? "密钥+口令" : "密钥");
-    const lastSync = t.last_sync ? t.last_sync.replace("T", " ").slice(5, 16) : "—";
+    const authBadge = t.auth === "password" ? "b-orange" : "b-blue";
+    const lastSync = t.last_sync ? t.last_sync.replace("T", " ").slice(5, 16) : "未同步";
     const lastRestart = t.last_restart ? t.last_restart.replace("T", " ").slice(5, 16) : "—";
-    const lastTest = t.last_test ? t.last_test.replace("T", " ").slice(5, 16) : "—";
-    let pkBadge = "";
-    if (t.needs_paramiko) pkBadge = '<span class="badge need-pk">需安装 paramiko</span>';
-    card.innerHTML = `
-      <input type="checkbox" class="srv-check" ${selected.has(t.name) ? "checked" : ""}>
-      <span class="check"></span>
-      <div class="srv-main">
+    let pk = t.needs_paramiko ? '<span class="badge b-red">需装 paramiko</span>' : "";
+    row.innerHTML = `
+      <span class="check-circle"></span>
+      <div class="main">
         <div class="srv-name">${esc(t.name)}<span class="led ${reachCls}"></span></div>
         <div class="srv-meta">${esc(t.username || "?")}@${esc(t.host)}:${t.port || 22} · ${esc(t.codex_dir || "")}</div>
-        <div class="srv-badges">
-          <span class="badge ${authCls}">${authTxt}</span>
-          ${pkBadge}
+        <div class="badges">
+          <span class="badge ${authBadge}">${authTxt}</span>${pk}
           <span class="badge">同步 ${lastSync}</span>
           <span class="badge">重启 ${lastRestart}</span>
-          <span class="badge">测试 ${lastTest}</span>
         </div>
       </div>
-      <div class="srv-actions">
-        <button type="button" class="icon-btn" data-act="edit">编辑</button>
-        <button type="button" class="icon-btn" data-act="del">删除</button>
+      <div class="srv-tools">
+        <button class="icon-btn" data-act="edit" title="编辑">✎</button>
+        <button class="icon-btn" data-act="del" title="删除">🗑</button>
       </div>`;
-    card.querySelector(".srv-check").addEventListener("change", () => {
+    row.addEventListener("click", e => {
+      if (e.target.closest('[data-act]')) return;
       if (selected.has(t.name)) selected.delete(t.name); else selected.add(t.name);
       saveSelected(selected);
-      card.classList.toggle("sel", selected.has(t.name));
+      row.classList.toggle("sel", selected.has(t.name));
+      renderSteps(STATE);
     });
-    card.querySelector('[data-act="edit"]').addEventListener("click", e => { e.preventDefault(); openModal(t.name); });
-    card.querySelector('[data-act="del"]').addEventListener("click", e => { e.preventDefault(); delTarget(t.name); });
-    box.appendChild(card);
+    row.querySelector('[data-act="edit"]').addEventListener("click", e => { e.stopPropagation(); openModal(t.name); });
+    row.querySelector('[data-act="del"]').addEventListener("click", e => { e.stopPropagation(); delTarget(t.name); });
+    box.appendChild(row);
   });
   $("btnSelectAll").textContent = (selected.size === list.length && list.length > 0) ? "全不选" : "全选";
 }
 
 function selectedTargets() { return [...selected]; }
 
-/* ---------------- server modal ---------------- */
-let editingName = null;
+/* ---------------- 服务器编辑 Sheet ---------------- */
 function openModal(name) {
   editingName = name || null;
-  $("modalTitle").textContent = name ? "编辑服务器 · " + name : "添加服务器";
+  $("modalTitle").textContent = name ? "编辑服务器" : "添加服务器";
   const t = name ? (STATE.targets || []).find(x => x.name === name) : null;
   $("fName").value = t ? t.name : "";
   $("fHost").value = t ? t.host : "";
@@ -487,17 +630,15 @@ function openModal(name) {
   $("fNode").value = t ? (t.node_path || "") : "";
   $("fCodex").value = t ? (t.codex_path || "") : "";
   $("fRestart").value = t ? (t.restart_script || "") : "";
-  const auth = t ? (t.auth || "key") : "key";
-  setAuthSeg(auth);
+  setAuthSeg(t ? (t.auth || "key") : "key");
   $("fPass").placeholder = t && t.has_password ? "••••（已保存，留空不修改）" : "服务器登录密码";
-  $("fPhrase").placeholder = (t && t.has_passphrase) ? "••••（已保存，留空不修改）" : "私钥本身加密时才填";
+  $("fPhrase").placeholder = (t && t.has_passphrase) ? "••••（已保存，留空不修改）" : "私钥本身加密时填写";
   $("modalBackdrop").classList.add("open");
 }
 function closeModal() { $("modalBackdrop").classList.remove("open"); editingName = null; }
 function setAuthSeg(auth) {
   document.querySelectorAll("#authSeg button").forEach(b => b.classList.toggle("on", b.dataset.auth === auth));
   const isPass = auth === "password";
-  $("fKeyWrap").style.display = isPass ? "" : "";
   $("fPassWrap").style.display = isPass ? "" : "none";
   $("fPhraseWrap").style.display = isPass ? "none" : "";
 }
@@ -541,10 +682,7 @@ async function delTarget(name) {
 async function testInModal() {
   const name = $("fName").value.trim();
   if (!name) { toast("请先填写名称", "err"); return; }
-  // save first, then test
-  try {
-    await saveTarget();
-  } catch (e) { return; }
+  try { await saveTarget(); } catch (e) { return; }
   try {
     await api("/api/test", { method: "POST", body: JSON.stringify({ targets: [name] }) });
     toast("连接测试已启动，见日志", "ok");
@@ -552,12 +690,12 @@ async function testInModal() {
   } catch (e) { toast(e.message, "err"); }
 }
 
-/* ---------------- operations ---------------- */
+/* ---------------- 操作 ---------------- */
 async function doExtract() {
   try {
     const d = await api("/api/extract", { method: "POST", body: "{}" });
     if (!d.ok) { toast(d.message || "提取失败", "err"); return; }
-    toast("共享配置已提取：" + d.message + " · " + d.note, "ok");
+    toast("已提取共享配置：" + d.message, "ok");
     await refresh();
   } catch (e) { toast(e.message, "err"); }
 }
@@ -582,7 +720,7 @@ async function doPreview() {
   const targets = selectedTargets();
   if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
   const box = $("diffBox");
-  box.innerHTML = '<span class="empty-tip">正在对比，请稍候…</span>';
+  box.innerHTML = '<div class="hint">正在对比，请稍候…</div>';
   try {
     const d = await api("/api/preview", { method: "POST", body: JSON.stringify({ targets }) });
     box.innerHTML = "";
@@ -599,8 +737,7 @@ async function doPreview() {
         else chips.push('<span class="chip ok">skills 一致</span>');
         if (r.catalog_changed) chips.push(`<span class="chip warn">模型目录 +${r.catalog_add}/-${r.catalog_del}</span>`);
         else chips.push('<span class="chip ok">模型目录一致</span>');
-        chips.push(r.tail_exists ? `<span class="chip mut">tail ${r.tail_lines} 行</span>` : '<span class="chip warn">首次同步将生成 tail</span>');
-        chips.push(`<span class="chip mut">${esc(r.provider_note || "")}</span>`);
+        chips.push(r.tail_exists ? `<span class="chip mut">tail ${r.tail_lines} 行</span>` : '<span class="chip warn">首同步生成 tail</span>');
       }
       card.innerHTML = `
         <div class="diff-head">
@@ -609,19 +746,10 @@ async function doPreview() {
           <span class="diff-chips">${chips.join("")}</span>
         </div>
         <div class="diff-body" style="display:${r.reachable === false ? "none" : ""}">
-          ${r.reachable === false ? '<div class="diff-lbl" style="color:var(--err)">' + esc(r.error || "无法连接") + "</div>" : ""}
-          <div>
-            <div class="diff-lbl">共享配置 config.shared.toml</div>
-            <div class="diff-pre" id="sd-${esc(name)}"></div>
-          </div>
-          <div>
-            <div class="diff-lbl">skills 文件差异（+ 本地有/远端无，- 远端有/本地无）</div>
-            <div class="diff-pre" id="sk-${esc(name)}"></div>
-          </div>
-          <div>
-            <div class="diff-lbl">模型目录 cc-switch-model-catalog.json</div>
-            <div class="diff-pre" id="ct-${esc(name)}"></div>
-          </div>
+          ${r.reachable === false ? '<div class="hint" style="color:var(--red)">' + esc(r.error || "无法连接") + "</div>" : ""}
+          <div><div class="diff-lbl">共享配置 config.shared.toml</div><div class="diff-pre" id="sd-${esc(name)}"></div></div>
+          <div><div class="diff-lbl">skills 文件（+ 新增 / - 删除）</div><div class="diff-pre" id="sk-${esc(name)}"></div></div>
+          <div><div class="diff-lbl">模型目录 cc-switch-model-catalog.json</div><div class="diff-pre" id="ct-${esc(name)}"></div></div>
         </div>`;
       box.appendChild(card);
       renderDiff(card.querySelector("#sd-" + CSS.escape(name)), r.shared_diff);
@@ -632,14 +760,18 @@ async function doPreview() {
         body.style.display = body.style.display === "none" ? "" : "none";
       });
     });
+    PREVIEW_DONE = true;
+    renderSteps(STATE);
     toast("预览完成，点击标题展开/收起差异", "ok");
-  } catch (e) { box.innerHTML = '<span class="empty-tip">预览失败：' + esc(e.message) + "</span>"; }
+  } catch (e) {
+    box.innerHTML = '<div class="hint">预览失败：' + esc(e.message) + "</div>";
+  }
 }
 
 async function doSync() {
   const targets = selectedTargets();
   if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
-  if (!confirm("确定同步到：" + targets.join("、") + " ？\n建议先点「② 预览差异」确认改动。")) return;
+  if (!confirm("确定同步到：" + targets.join("、") + " ？\n建议先点「预览差异」确认改动。")) return;
   try {
     await api("/api/sync", { method: "POST", body: JSON.stringify({ targets }) });
     toast("同步任务已启动，见日志", "ok");
@@ -668,7 +800,7 @@ async function doRestart() {
   } catch (e) { toast(e.message, "err"); }
 }
 
-/* ---------------- log ---------------- */
+/* ---------------- 日志 ---------------- */
 function appendLog(lines) {
   const box = $("log");
   if (box.querySelector(".log-empty")) box.innerHTML = "";
@@ -676,8 +808,7 @@ function appendLog(lines) {
     const div = document.createElement("div");
     div.className = "l-line l-" + (l.level || "info");
     div.innerHTML = '<span class="t">[' + esc(l.t) + "]</span>" +
-      (l.target ? '<span class="tg">[' + esc(l.target) + "]</span>" : "") +
-      esc(l.msg);
+      (l.target ? '<span class="tg">[' + esc(l.target) + "]</span>" : "") + esc(l.msg);
     box.appendChild(div);
   });
   box.scrollTop = box.scrollHeight;
@@ -718,7 +849,7 @@ async function refresh() {
   }
 }
 
-/* ---------------- settings ---------------- */
+/* ---------------- 设置 ---------------- */
 async function saveSettings() {
   const sharedKeys = $("inSharedKeys").value.split(/[,，\s]+/).filter(Boolean);
   try {
@@ -739,16 +870,12 @@ async function detectHome() {
   try {
     const d = await api("/api/detect");
     const pick = (d.existing && d.existing[0]) || (d.candidates && d.candidates[0]) || "";
-    if (pick) {
-      $("inCodexHome").value = pick;
-      toast("已填入 " + pick + "（点「保存设置」生效）", "ok");
-    } else {
-      toast("未检测到，请手动填写 .codex 路径", "warn");
-    }
+    if (pick) { $("inCodexHome").value = pick; toast("已填入 " + pick + "（点保存设置生效）", "ok"); }
+    else toast("未检测到，请手动填写 .codex 路径", "warn");
   } catch (e) { toast(e.message, "err"); }
 }
 
-/* ---------------- events ---------------- */
+/* ---------------- 事件绑定 ---------------- */
 $("btnAddServer").onclick = () => openModal(null);
 $("btnModalClose").onclick = closeModal;
 $("btnModalCancel").onclick = closeModal;
@@ -761,16 +888,30 @@ $("btnPreview").onclick = doPreview;
 $("btnSync").onclick = doSync;
 $("btnTest").onclick = doTest;
 $("btnRestart").onclick = doRestart;
+$("btnClearLog").onclick = () => { $("log").innerHTML = '<span style="color:var(--label3)">已清空</span>'; };
+$("btnSaveSettings").onclick = saveSettings;
+$("btnDetect").onclick = detectHome;
+$("btnSettingsToggle").onclick = () => {
+  const s = $("secSettings");
+  const show = s.style.display === "none";
+  s.style.display = show ? "" : "none";
+  $("btnSettingsToggle").querySelector(".chev").textContent = show ? "⌄" : "›";
+};
+document.querySelectorAll(".step[data-scroll]").forEach(el => {
+  el.style.cursor = "pointer";
+  el.addEventListener("click", () => {
+    const sec = $(el.dataset.scroll);
+    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
 $("btnSelectAll").onclick = () => {
   const list = (STATE && STATE.targets) || [];
   const allOn = list.length > 0 && selected.size === list.length;
   selected = allOn ? new Set() : new Set(list.map(t => t.name));
   saveSelected(selected);
   renderServers(STATE);
+  renderSteps(STATE);
 };
-$("btnClearLog").onclick = () => { $("log").innerHTML = '<span class="log-empty">已清空</span>'; };
-$("btnSaveSettings").onclick = saveSettings;
-$("btnDetect").onclick = detectHome;
 
 refresh();
 pollLog();
