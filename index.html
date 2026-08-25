@@ -371,7 +371,7 @@
         <div class="card" style="padding:18px 16px">
           <div class="step-body">
             <div class="btn-row">
-              <button class="btn btn-secondary" id="btnSelectAll" style="flex:1">全选</button>
+              <button class="btn btn-secondary" id="btnClearSel" style="flex:1">全不选</button>
               <button class="btn btn-secondary" id="btnTest" style="flex:1">测试连接</button>
             </div>
             <button class="btn btn-primary" id="btnSync" style="width:100%; min-height:50px; font-size:17px">③ 同步到所选服务器</button>
@@ -635,7 +635,7 @@ function renderServers(st) {
     row.querySelector('[data-act="del"]').addEventListener("click", e => { e.stopPropagation(); delTarget(t.name); });
     box.appendChild(row);
   });
-  $("btnSelectAll").textContent = (selected.size === list.length && list.length > 0) ? "全不选" : "全选";
+
 }
 
 function selectedTargets() { return [...selected]; }
@@ -931,13 +931,12 @@ $("btnClearLog").onclick = () => { $("log").innerHTML = '<span style="color:var(
 $("btnClearLogTop").onclick = () => { $("log").innerHTML = '<span style="color:var(--label3)">已清空</span>'; };
 $("btnSaveSettings").onclick = saveSettings;
 $("btnDetect").onclick = detectHome;
-$("btnSelectAll").onclick = () => {
-  const list = (STATE && STATE.targets) || [];
-  const allOn = list.length > 0 && selected.size === list.length;
-  selected = allOn ? new Set() : new Set(list.map(t => t.name));
+$("btnClearSel").onclick = () => {
+  selected.clear();
   saveSelected(selected);
   renderServers(STATE);
   renderSteps(STATE);
+  toast("已清空选择", "ok");
 };
 
 refresh();
