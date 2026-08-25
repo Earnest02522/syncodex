@@ -481,7 +481,10 @@
 <div id="toast"></div>
 <script>
 "use strict";
-const $ = id => document.getElementById(id);
+const NOOP = { textContent: "", value: "", checked: false, disabled: false, style: {},
+  classList: { add(){}, remove(){}, toggle(){} }, addEventListener(){}, appendChild(){},
+  querySelector(){ return null; }, querySelectorAll(){ return []; }, scrollTop: 0, innerHTML: "", dataset: {} };
+const $ = id => document.getElementById(id) || NOOP;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const SEL_KEY = "syncodex.selected";
 
@@ -729,6 +732,7 @@ async function doExtract() {
 }
 
 function renderDiff(pre, text) {
+  if (!pre) return;
   if (!text) { pre.textContent = ""; return; }
   if (text.startsWith("（")) { pre.innerHTML = '<span class="note">' + esc(text) + "</span>"; return; }
   const frag = document.createDocumentFragment();
