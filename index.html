@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>syncodex · Codex SSH 同步台</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10131a; --panel2:#161a24; --panel3:#1c2230;
+    --line:#222838; --line-strong:#2e3648;
+    --text:#e8ebf3; --muted:#8a92a6; --faint:#5c6478;
+    --accent:#2dd4bf; --accent-strong:#0fb5a2; --accent-soft:rgba(45,212,191,.12);
+    --ok:#34d399; --warn:#f5b74d; --err:#f47067; --info:#7aa2f7;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:ui-monospace,"Cascadia Code","JetBrains Mono","SF Mono",Consolas,monospace;
+    --r:10px; --r-sm:7px;
+    --shadow:0 12px 34px rgba(0,0,0,.38);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font:14px/1.65 var(--sans); letter-spacing:.1px;
+    background-image:
+      radial-gradient(1100px 420px at 78% -10%, rgba(45,212,191,.055), transparent 60%),
+      radial-gradient(900px 380px at 8% -10%, rgba(122,162,247,.05), transparent 60%);
+    background-attachment:fixed;
+  }
+  ::selection{background:var(--accent-soft); color:var(--accent)}
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre,.mono{font-family:var(--mono)}
+  button{font:inherit; color:var(--text); background:var(--panel2);
+    border:1px solid var(--line-strong); border-radius:var(--r-sm);
+    padding:8px 14px; cursor:pointer; transition:border-color .15s, background .15s, transform .05s}
+  button:hover{border-color:var(--accent); background:var(--panel3)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.45; cursor:not-allowed; border-color:var(--line)}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#06110f; font-weight:600}
+  button.primary:hover{background:var(--accent-strong); border-color:var(--accent-strong)}
+  button.ghost{background:transparent}
+  button.danger{color:var(--warn); border-color:rgba(245,183,77,.35)}
+  button.danger:hover{border-color:var(--warn)}
+  input[type=text],input[type=password],input[type=number],textarea,select{
+    font:13px/1.5 var(--mono); color:var(--text); background:#0d1017;
+    border:1px solid var(--line-strong); border-radius:var(--r-sm);
+    padding:8px 10px; width:100%; outline:none; transition:border-color .15s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px 26px; backdrop-filter:blur(10px);
+    background:rgba(10,12,16,.82); border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:12px; min-width:0}
+  .brand svg{flex:none}
+  .wordmark{font-family:var(--mono); font-size:18px; font-weight:700; letter-spacing:.5px}
+  .wordmark em{color:var(--accent); font-style:normal}
+  .tagline{color:var(--faint); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .top-right{display:flex; align-items:center; gap:12px; flex:none}
+  .pill{display:inline-flex; align-items:center; gap:7px; font:12px var(--mono);
+    color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:4px 12px}
+  .pill .dot{width:7px; height:7px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok)}
+  .pill.off .dot{background:var(--err); box-shadow:0 0 8px var(--err)}
+  main{max-width:1180px; margin:0 auto; padding:26px 26px 40px}
+  section{margin-bottom:26px}
+  .sec-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+  .sec-head h2{font-size:13px; font-weight:600; color:var(--muted); letter-spacing:1.2px; text-transform:uppercase}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r)}
+  /* flow bar */
+  .flowbar{display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:14px 18px}
+  .steps{display:flex; align-items:center; gap:8px}
+  .step{display:flex; align-items:center; gap:8px; color:var(--faint); font-size:12.5px; white-space:nowrap}
+  .step .n{width:22px; height:22px; border-radius:50%; border:1px solid var(--line-strong);
+    display:inline-flex; align-items:center; justify-content:center; font:11px var(--mono); color:var(--muted)}
+  .step.on{color:var(--text)}
+  .step.on .n{background:var(--accent-soft); border-color:var(--accent); color:var(--accent)}
+  .step.done .n{background:var(--accent); border-color:var(--accent); color:#06110f}
+  .step .bar{width:22px; height:1px; background:var(--line-strong)}
+  .flow-actions{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .flow-actions .primary{box-shadow:0 4px 18px rgba(45,212,191,.25)}
+  /* server list */
+  .server-list{display:grid; gap:10px}
+  .server-card{
+    display:flex; align-items:flex-start; gap:14px; padding:14px 16px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--r);
+    cursor:pointer; transition:border-color .15s, background .15s; position:relative;
+  }
+  .server-card:hover{border-color:var(--line-strong); background:var(--panel2)}
+  .server-card.sel{border-color:var(--accent); background:linear-gradient(180deg, rgba(45,212,191,.05), transparent 55%)}
+  .srv-check{position:absolute; opacity:0; pointer-events:none}
+  .check{flex:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--line-strong);
+    background:#0d1017; margin-top:2px; display:inline-flex; align-items:center; justify-content:center; transition:.15s}
+  .server-card.sel .check{background:var(--accent); border-color:var(--accent)}
+  .server-card.sel .check::after{content:""; width:9px; height:5px; border-left:2px solid #06110f; border-bottom:2px solid #06110f;
+    transform:rotate(-45deg) translate(1px,-1px)}
+  .srv-main{flex:1; min-width:0}
+  .srv-name{display:flex; align-items:center; gap:9px; font:600 14.5px var(--mono)}
+  .led{width:8px; height:8px; border-radius:50%; background:var(--faint); flex:none}
+  .led.ok{background:var(--ok); box-shadow:0 0 8px var(--ok)}
+  .led.err{background:var(--err); box-shadow:0 0 8px var(--err)}
+  .srv-meta{font:12.5px var(--mono); color:var(--muted); margin-top:3px; word-break:break-all}
+  .srv-badges{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .badge{font:11px var(--mono); color:var(--muted); background:var(--panel2); border:1px solid var(--line);
+    border-radius:999px; padding:1px 9px}
+  .badge.auth-key{color:var(--info); border-color:rgba(122,162,247,.35)}
+  .badge.auth-pass{color:var(--warn); border-color:rgba(245,183,77,.35)}
+  .badge.need-pk{color:var(--err); border-color:rgba(244,112,103,.4)}
+  .srv-actions{display:flex; gap:6px; flex:none; opacity:0; transition:opacity .15s}
+  .server-card:hover .srv-actions{opacity:1}
+  .icon-btn{padding:5px 10px; font-size:12px; background:transparent}
+  .add-card{
+    border:1.5px dashed var(--line-strong); border-radius:var(--r); padding:18px;
+    text-align:center; color:var(--muted); cursor:pointer; background:transparent; width:100%;
+    font:13.5px var(--sans); transition:border-color .15s,color .15s;
+  }
+  .add-card:hover{border-color:var(--accent); color:var(--accent)}
+  .empty-tip{color:var(--faint); font-size:13px; padding:6px 2px}
+  /* settings */
+  details.settings{border:1px solid var(--line); border-radius:var(--r); background:var(--panel)}
+  details.settings summary{cursor:pointer; padding:14px 18px; font-size:13px; font-weight:600;
+    color:var(--muted); letter-spacing:1.2px; text-transform:uppercase; list-style:none}
+  details.settings summary::-webkit-details-marker{display:none}
+  details.settings summary::before{content:"▸ "; color:var(--accent)}
+  details.settings[open] summary::before{content:"▾ "}
+  .settings-body{padding:4px 18px 18px; display:grid; gap:16px}
+  .set-row{display:grid; grid-template-columns:minmax(220px,1fr) 2fr; gap:12px; align-items:center}
+  .set-row label{color:var(--muted); font-size:13px}
+  .set-row .hint{color:var(--faint); font-size:11.5px; margin-top:2px}
+  .inline{display:flex; gap:8px; align-items:center}
+  .toggle{display:flex; align-items:center; gap:10px; color:var(--text); font-size:13px; cursor:pointer}
+  .toggle input{display:none}
+  .toggle .tk{width:36px; height:20px; border-radius:999px; background:var(--panel3); border:1px solid var(--line-strong);
+    position:relative; transition:.18s; flex:none}
+  .toggle .tk::after{content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%;
+    background:var(--muted); transition:.18s}
+  .toggle input:checked + .tk{background:var(--accent-soft); border-color:var(--accent)}
+  .toggle input:checked + .tk::after{left:18px; background:var(--accent)}
+  .toggles{display:flex; flex-wrap:wrap; gap:18px}
+  /* preview */
+  .diffbox{display:grid; gap:10px}
+  .diff-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
+  .diff-head{display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; flex-wrap:wrap}
+  .diff-head:hover{background:var(--panel2)}
+  .diff-name{font:600 13.5px var(--mono)}
+  .diff-host{font:12px var(--mono); color:var(--muted)}
+  .diff-chips{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap}
+  .chip{font:11px var(--mono); border-radius:999px; padding:1px 9px; border:1px solid var(--line)}
+  .chip.ok{color:var(--ok); border-color:rgba(52,211,153,.4)}
+  .chip.warn{color:var(--warn); border-color:rgba(245,183,77,.4)}
+  .chip.err{color:var(--err); border-color:rgba(244,112,103,.4)}
+  .chip.mut{color:var(--muted)}
+  .diff-body{padding:0 16px 14px; display:grid; gap:12px}
+  .diff-lbl{font:11px var(--mono); color:var(--faint); letter-spacing:.6px; margin-bottom:4px}
+  .diff-pre{background:#0c0f15; border:1px solid var(--line); border-radius:var(--r-sm);
+    padding:10px 12px; font:12px/1.6 var(--mono); overflow:auto; max-height:300px; white-space:pre-wrap; word-break:break-all}
+  .diff-pre .dl{color:var(--err); background:rgba(244,112,103,.07)}
+  .diff-pre .al{color:var(--ok); background:rgba(52,211,153,.07)}
+  .diff-pre .hl{color:var(--faint)}
+  .diff-pre .note{color:var(--muted)}
+  /* log */
+  .log{background:#0a0d12; border:1px solid var(--line); border-radius:var(--r);
+    height:280px; overflow:auto; padding:12px 14px; font:12px/1.75 var(--mono)}
+  .log .t{color:var(--faint); margin-right:8px}
+  .log .tg{color:var(--accent); margin-right:6px}
+  .log .l-info{color:#9fb4e8}
+  .log .l-ok{color:var(--ok)}
+  .log .l-warn{color:var(--warn)}
+  .log .l-err{color:var(--err)}
+  .log .l-line{white-space:pre-wrap; word-break:break-all}
+  .log-empty{color:var(--faint); font:12px var(--mono)}
+  /* modal */
+  .backdrop{position:fixed; inset:0; background:rgba(5,7,10,.66); backdrop-filter:blur(3px);
+    display:flex; align-items:flex-start; justify-content:center; padding:6vh 16px; z-index:100;
+    opacity:0; pointer-events:none; transition:opacity .16s}
+  .backdrop.open{opacity:1; pointer-events:auto}
+  .modal{background:var(--panel2); border:1px solid var(--line-strong); border-radius:14px;
+    width:100%; max-width:660px; box-shadow:var(--shadow); transform:translateY(10px) scale(.985);
+    transition:transform .16s; max-height:88vh; display:flex; flex-direction:column}
+  .backdrop.open .modal{transform:none}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line)}
+  .modal-head h3{font:600 15px var(--sans)}
+  .modal-close{background:transparent; border:none; font-size:18px; color:var(--muted); padding:2px 8px}
+  .modal-body{padding:18px 20px; overflow:auto; display:grid; gap:13px}
+  .f2{display:grid; grid-template-columns:1fr 1fr; gap:13px}
+  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:5px}
+  .field .req{color:var(--err)}
+  .seg{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line-strong); border-radius:var(--r-sm); overflow:hidden}
+  .seg button{padding:8px; border:none; border-radius:0; background:transparent; color:var(--muted)}
+  .seg button.on{background:var(--accent-soft); color:var(--accent)}
+  .modal-foot{display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--line)}
+  .hintline{font:11.5px var(--mono); color:var(--faint)}
+  /* toast */
+  #toast{position:fixed; top:18px; right:18px; z-index:200; display:flex; flex-direction:column; gap:8px}
+  .toast{background:var(--panel3); border:1px solid var(--line-strong); border-left:3px solid var(--accent);
+    border-radius:8px; padding:10px 14px; font-size:13px; box-shadow:var(--shadow);
+    animation:tin .18s ease; max-width:380px}
+  .toast.ok{border-left-color:var(--ok)} .toast.err{border-left-color:var(--err)} .toast.warn{border-left-color:var(--warn)}
+  @keyframes tin{from{opacity:0; transform:translateX(14px)} to{opacity:1; transform:none}}
+  footer{max-width:1180px; margin:0 auto; padding:0 26px 40px; display:flex; justify-content:space-between;
+    gap:12px; flex-wrap:wrap; color:var(--faint); font-size:12px; border-top:1px solid var(--line); padding-top:18px}
+  @media (max-width:720px){
+    .f2{grid-template-columns:1fr}
+    .set-row{grid-template-columns:1fr}
+    main{padding:18px 14px 30px}
+    .topbar{padding:12px 14px}
+    .tagline{display:none}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important; transition:none!important}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="23" height="23" rx="6" stroke="#2dd4bf" stroke-width="1.6"/>
+      <path d="M8 10h10M8 10l3-3M8 10l3 3" stroke="#2dd4bf" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M18 16H8M18 16l-3-3M18 16l-3 3" stroke="#e8ebf3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="wordmark">sync<em>odex</em></div>
+      <div class="tagline">把本地 Codex 配置 / skills / 模型目录同步到 SSH 服务器</div>
+    </div>
+  </div>
+  <div class="top-right">
+    <span class="pill" id="bindPill"><span class="dot"></span><span id="bindTxt">127.0.0.1:—</span></span>
+    <a class="pill" href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener" style="text-decoration:none">GitHub ↗</a>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="card flowbar">
+      <div class="steps">
+        <div class="step on"><span class="n">1</span> 连接服务器</div><span class="bar"></span>
+        <div class="step" id="st2"><span class="n">2</span> 提取共享配置</div><span class="bar"></span>
+        <div class="step" id="st3"><span class="n">3</span> 预览差异</div><span class="bar"></span>
+        <div class="step" id="st4"><span class="n">4</span> 同步 + 重启</div>
+      </div>
+      <div class="flow-actions">
+        <button id="btnSelectAll" class="ghost">全选</button>
+        <button id="btnTest" class="ghost">测试连接</button>
+        <button id="btnExtract" class="primary">① 提取共享配置</button>
+        <button id="btnPreview">② 预览差异</button>
+        <button id="btnSync">③ 同步到所选</button>
+        <button id="btnRestart" class="danger">重启进程</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>SSH 服务器</h2>
+      <button id="btnAddServer" class="ghost" style="color:var(--accent)">＋ 添加服务器</button>
+    </div>
+    <div class="server-list" id="serverList"></div>
+  </section>
+
+  <section>
+    <details class="settings" id="settingsPanel">
+      <summary>本地与同步设置</summary>
+      <div class="settings-body">
+        <div class="set-row">
+          <label>本地 Codex 文件夹<span class="hint">（含 config.toml / skills / 模型目录）</span></label>
+          <div class="inline">
+            <input type="text" id="inCodexHome" spellcheck="false" placeholder="C:\Users\you\.codex 或 /home/you/.codex">
+            <button id="btnDetect" class="ghost">自动检测</button>
+          </div>
+        </div>
+        <div class="set-row">
+          <label>同步内容<span class="hint">provider 永不进共享段，每台服务器保留自己的</span></label>
+          <div class="toggles">
+            <label class="toggle"><input type="checkbox" id="tgModel"><span class="tk"></span>模型 model</label>
+            <label class="toggle"><input type="checkbox" id="tgSkills"><span class="tk"></span>skills</label>
+            <label class="toggle"><input type="checkbox" id="tgCatalog"><span class="tk"></span>模型目录</label>
+            <label class="toggle"><input type="checkbox" id="tgMirror"><span class="tk"></span>镜像删除远端多余文件</label>
+          </div>
+        </div>
+        <div class="set-row">
+          <label>共享键（进阶）<span class="hint">从本地 config.toml 提取的顶层键，逗号分隔</span></label>
+          <input type="text" id="inSharedKeys" spellcheck="false">
+        </div>
+        <div class="set-row">
+          <label>传输环境<span class="hint">系统 OpenSSH 零依赖；paramiko 仅密码认证需要</span></label>
+          <div class="hintline" id="transportInfo">—</div>
+        </div>
+        <div class="set-row" style="grid-template-columns:1fr">
+          <div style="display:flex; gap:10px; justify-content:flex-end">
+            <button id="btnSaveSettings">保存设置</button>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>同步前预览</h2></div>
+    <div class="diffbox" id="diffBox"><span class="empty-tip">勾选服务器后点「② 预览差异」，这里会显示每台服务器的改动内容。</span></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>运行日志</h2>
+      <button id="btnClearLog" class="ghost">清空</button>
+    </div>
+    <div class="log" id="log"><span class="log-empty">等待操作…</span></div>
+  </section>
+</main>
+
+<footer>
+  <span>MIT License · 仅监听 127.0.0.1 · 永不同步 auth.json / 密钥</span>
+  <a href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener">github.com/Earnest02522/syncodex</a>
+</footer>
+
+<div class="backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">添加服务器</h3>
+      <button class="modal-close" id="btnModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="f2">
+        <div class="field"><label>名称 <span class="req">*</span></label><input type="text" id="fName" placeholder="例如 my-server" spellcheck="false"></div>
+        <div class="field"><label>主机 Host <span class="req">*</span></label><input type="text" id="fHost" placeholder="172.18.32.11 或 my-server.local" spellcheck="false"></div>
+        <div class="field"><label>端口</label><input type="number" id="fPort" value="22"></div>
+        <div class="field"><label>用户名</label><input type="text" id="fUser" placeholder="root" spellcheck="false"></div>
+      </div>
+      <div class="field">
+        <label>认证方式</label>
+        <div class="seg" id="authSeg">
+          <button type="button" data-auth="key" class="on">密钥文件 / ssh-agent</button>
+          <button type="button" data-auth="password">密码</button>
+        </div>
+      </div>
+      <div class="f2">
+        <div class="field" id="fKeyWrap"><label>私钥路径</label><input type="text" id="fKey" placeholder="C:\Users\you\.ssh\id_rsa（留空=走 ssh config/agent）" spellcheck="false"></div>
+        <div class="field" id="fPassWrap" style="display:none"><label>密码</label><input type="password" id="fPass" placeholder="服务器登录密码" autocomplete="off"></div>
+        <div class="field" id="fPhraseWrap"><label>私钥口令（可选）</label><input type="password" id="fPhrase" placeholder="私钥本身加密时才填" autocomplete="off"></div>
+        <div class="field"><label>远端 .codex 目录 <span class="req">*</span></label><input type="text" id="fCodexDir" placeholder="/home/you/.codex" spellcheck="false"></div>
+      </div>
+      <details style="border:1px solid var(--line); border-radius:8px; padding:0 12px">
+        <summary style="cursor:pointer; color:var(--muted); font-size:12.5px; padding:9px 0">高级（node/codex 路径、自定义重启脚本）</summary>
+        <div class="f2" style="padding:6px 0 12px">
+          <div class="field"><label>node 路径覆盖（可选）</label><input type="text" id="fNode" spellcheck="false"></div>
+          <div class="field"><label>codex 路径覆盖（可选）</label><input type="text" id="fCodex" spellcheck="false"></div>
+        </div>
+        <div class="field" style="padding-bottom:12px"><label>自定义重启脚本（可选，整个覆盖默认脚本）</label><textarea id="fRestart" rows="3" spellcheck="false" style="font:12px/1.5 var(--mono)"></textarea></div>
+      </details>
+      <div class="hintline" id="modalHint">密码 / 口令会明文保存在本地 config.json（已 gitignore），请勿提交该文件。</div>
+    </div>
+    <div class="modal-foot">
+      <button id="btnTestInModal" class="ghost">测试连接</button>
+      <button id="btnModalCancel" class="ghost">取消</button>
+      <button id="btnModalSave" class="primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SEL_KEY = "syncodex.selected";
+
+let STATE = null;
+let LOG_SEQ = 0;
+let POLLING = false;
+
+async function api(path, opts) {
+  const r = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok && d.error) throw new Error(d.error);
+  return d;
+}
+
+function toast(msg, kind) {
+  const box = $("toast");
+  const el = document.createElement("div");
+  el.className = "toast " + (kind || "");
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .3s"; }, 3400);
+  setTimeout(() => el.remove(), 3800);
+}
+
+function loadSelected() {
+  try { return new Set(JSON.parse(localStorage.getItem(SEL_KEY) || "[]")); } catch (e) { return new Set(); }
+}
+function saveSelected(s) { localStorage.setItem(SEL_KEY, JSON.stringify([...s])); }
+let selected = loadSelected();
+
+function selCount() { return selected.size; }
+
+function renderStatus(st) {
+  STATE = st;
+  $("bindTxt").textContent = "127.0.0.1:" + st.port;
+  $("bindPill").classList.toggle("off", false);
+  $("inCodexHome").value = st.codex_home || "";
+  $("tgModel").checked = !!st.sync_model;
+  $("tgSkills").checked = !!st.sync_skills;
+  $("tgCatalog").checked = !!st.sync_catalog;
+  $("tgMirror").checked = !!st.mirror_skills;
+  $("inSharedKeys").value = (st.shared_keys || []).join(", ");
+  const pk = st.paramiko_available;
+  $("transportInfo").textContent =
+    "ssh: " + (st.ssh_bin || "ssh") +
+    (pk ? "  ·  paramiko 已安装（支持密码认证）" : "  ·  paramiko 未安装（密钥认证零依赖；密码认证需 pip install paramiko）");
+  renderServers(st);
+  renderSteps(st);
+}
+
+function renderSteps(st) {
+  const s2 = document.querySelector("#st2"), s3 = document.querySelector("#st3"), s4 = document.querySelector("#st4");
+  s2.classList.toggle("on", !!st.shared_exists);
+  s2.querySelector(".n").textContent = st.shared_exists ? "✓" : "2";
+}
+
+function renderServers(st) {
+  const box = $("serverList");
+  const list = st.targets || [];
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-tip">还没有配置任何服务器。点右上角「＋ 添加服务器」，填入 SSH 信息（主机/用户名/密钥或密码）和远端 .codex 目录即可。</div>';
+    return;
+  }
+  box.innerHTML = "";
+  list.forEach(t => {
+    const card = document.createElement("label");
+    card.className = "server-card" + (selected.has(t.name) ? " sel" : "");
+    const reachCls = t.reachable === true ? "ok" : (t.reachable === false ? "err" : "");
+    const authCls = t.auth === "password" ? "auth-pass" : "auth-key";
+    const authTxt = t.auth === "password" ? "密码" : (t.has_passphrase ? "密钥+口令" : "密钥");
+    const lastSync = t.last_sync ? t.last_sync.replace("T", " ").slice(5, 16) : "—";
+    const lastRestart = t.last_restart ? t.last_restart.replace("T", " ").slice(5, 16) : "—";
+    const lastTest = t.last_test ? t.last_test.replace("T", " ").slice(5, 16) : "—";
+    let pkBadge = "";
+    if (t.needs_paramiko) pkBadge = '<span class="badge need-pk">需安装 paramiko</span>';
+    card.innerHTML = `
+      <input type="checkbox" class="srv-check" ${selected.has(t.name) ? "checked" : ""}>
+      <span class="check"></span>
+      <div class="srv-main">
+        <div class="srv-name">${esc(t.name)}<span class="led ${reachCls}"></span></div>
+        <div class="srv-meta">${esc(t.username || "?")}@${esc(t.host)}:${t.port || 22} · ${esc(t.codex_dir || "")}</div>
+        <div class="srv-badges">
+          <span class="badge ${authCls}">${authTxt}</span>
+          ${pkBadge}
+          <span class="badge">同步 ${lastSync}</span>
+          <span class="badge">重启 ${lastRestart}</span>
+          <span class="badge">测试 ${lastTest}</span>
+        </div>
+      </div>
+      <div class="srv-actions">
+        <button type="button" class="icon-btn" data-act="edit">编辑</button>
+        <button type="button" class="icon-btn" data-act="del">删除</button>
+      </div>`;
+    card.querySelector(".srv-check").addEventListener("change", () => {
+      if (selected.has(t.name)) selected.delete(t.name); else selected.add(t.name);
+      saveSelected(selected);
+      card.classList.toggle("sel", selected.has(t.name));
+    });
+    card.querySelector('[data-act="edit"]').addEventListener("click", e => { e.preventDefault(); openModal(t.name); });
+    card.querySelector('[data-act="del"]').addEventListener("click", e => { e.preventDefault(); delTarget(t.name); });
+    box.appendChild(card);
+  });
+  $("btnSelectAll").textContent = (selected.size === list.length && list.length > 0) ? "全不选" : "全选";
+}
+
+function selectedTargets() { return [...selected]; }
+
+/* ---------------- server modal ---------------- */
+let editingName = null;
+function openModal(name) {
+  editingName = name || null;
+  $("modalTitle").textContent = name ? "编辑服务器 · " + name : "添加服务器";
+  const t = name ? (STATE.targets || []).find(x => x.name === name) : null;
+  $("fName").value = t ? t.name : "";
+  $("fHost").value = t ? t.host : "";
+  $("fPort").value = t ? (t.port || 22) : 22;
+  $("fUser").value = t ? (t.username || "") : "";
+  $("fKey").value = t ? (t.key_path || "") : "";
+  $("fPass").value = "";
+  $("fPhrase").value = "";
+  $("fCodexDir").value = t ? (t.codex_dir || "") : "";
+  $("fNode").value = t ? (t.node_path || "") : "";
+  $("fCodex").value = t ? (t.codex_path || "") : "";
+  $("fRestart").value = t ? (t.restart_script || "") : "";
+  const auth = t ? (t.auth || "key") : "key";
+  setAuthSeg(auth);
+  $("fPass").placeholder = t && t.has_password ? "••••（已保存，留空不修改）" : "服务器登录密码";
+  $("fPhrase").placeholder = (t && t.has_passphrase) ? "••••（已保存，留空不修改）" : "私钥本身加密时才填";
+  $("modalBackdrop").classList.add("open");
+}
+function closeModal() { $("modalBackdrop").classList.remove("open"); editingName = null; }
+function setAuthSeg(auth) {
+  document.querySelectorAll("#authSeg button").forEach(b => b.classList.toggle("on", b.dataset.auth === auth));
+  const isPass = auth === "password";
+  $("fKeyWrap").style.display = isPass ? "" : "";
+  $("fPassWrap").style.display = isPass ? "" : "none";
+  $("fPhraseWrap").style.display = isPass ? "none" : "";
+}
+
+async function saveTarget() {
+  const name = $("fName").value.trim();
+  if (!name) { toast("请填写服务器名称", "err"); return; }
+  if (!$("fHost").value.trim()) { toast("请填写主机地址", "err"); return; }
+  const target = {
+    name,
+    host: $("fHost").value.trim(),
+    port: parseInt($("fPort").value || "22", 10) || 22,
+    username: $("fUser").value.trim() || "root",
+    auth: document.querySelector("#authSeg button.on").dataset.auth,
+    key_path: $("fKey").value.trim(),
+    password: $("fPass").value,
+    passphrase: $("fPhrase").value,
+    codex_dir: $("fCodexDir").value.trim() || "/root/.codex",
+    node_path: $("fNode").value.trim(),
+    codex_path: $("fCodex").value.trim(),
+    restart_script: $("fRestart").value.trim(),
+  };
+  try {
+    await api("/api/targets", { method: "POST", body: JSON.stringify({ target }) });
+    toast("服务器已保存：" + name, "ok");
+    closeModal();
+    await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function delTarget(name) {
+  if (!confirm("确定删除服务器「" + name + "」？仅删除本地配置，不影响远程。")) return;
+  try {
+    await api("/api/targets/delete", { method: "POST", body: JSON.stringify({ name }) });
+    selected.delete(name); saveSelected(selected);
+    toast("已删除 " + name, "ok");
+    await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function testInModal() {
+  const name = $("fName").value.trim();
+  if (!name) { toast("请先填写名称", "err"); return; }
+  // save first, then test
+  try {
+    await saveTarget();
+  } catch (e) { return; }
+  try {
+    await api("/api/test", { method: "POST", body: JSON.stringify({ targets: [name] }) });
+    toast("连接测试已启动，见日志", "ok");
+    pollLog(); await waitIdle(); await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+/* ---------------- operations ---------------- */
+async function doExtract() {
+  try {
+    const d = await api("/api/extract", { method: "POST", body: "{}" });
+    if (!d.ok) { toast(d.message || "提取失败", "err"); return; }
+    toast("共享配置已提取：" + d.message + " · " + d.note, "ok");
+    await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+function renderDiff(pre, text) {
+  if (!text) { pre.textContent = ""; return; }
+  if (text.startsWith("（")) { pre.innerHTML = '<span class="note">' + esc(text) + "</span>"; return; }
+  const frag = document.createDocumentFragment();
+  text.split("\n").forEach(ln => {
+    const span = document.createElement("div");
+    span.textContent = ln || " ";
+    if (/^(---|\+\+\+|@@)/.test(ln)) span.className = "hl";
+    else if (ln.startsWith("+")) span.className = "al";
+    else if (ln.startsWith("-")) span.className = "dl";
+    frag.appendChild(span);
+  });
+  pre.innerHTML = "";
+  pre.appendChild(frag);
+}
+
+async function doPreview() {
+  const targets = selectedTargets();
+  if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
+  const box = $("diffBox");
+  box.innerHTML = '<span class="empty-tip">正在对比，请稍候…</span>';
+  try {
+    const d = await api("/api/preview", { method: "POST", body: JSON.stringify({ targets }) });
+    box.innerHTML = "";
+    targets.forEach(name => {
+      const r = d.results[name];
+      if (!r) return;
+      const card = document.createElement("div");
+      card.className = "diff-card";
+      const chips = [];
+      if (r.reachable === false) {
+        chips.push('<span class="chip err">无法连接</span>');
+      } else {
+        if (r.skills_add || r.skills_del) chips.push(`<span class="chip warn">skills +${r.skills_add}/-${r.skills_del}</span>`);
+        else chips.push('<span class="chip ok">skills 一致</span>');
+        if (r.catalog_changed) chips.push(`<span class="chip warn">模型目录 +${r.catalog_add}/-${r.catalog_del}</span>`);
+        else chips.push('<span class="chip ok">模型目录一致</span>');
+        chips.push(r.tail_exists ? `<span class="chip mut">tail ${r.tail_lines} 行</span>` : '<span class="chip warn">首次同步将生成 tail</span>');
+        chips.push(`<span class="chip mut">${esc(r.provider_note || "")}</span>`);
+      }
+      card.innerHTML = `
+        <div class="diff-head">
+          <span class="diff-name">${esc(name)}</span>
+          <span class="diff-host">${esc(r.host)}</span>
+          <span class="diff-chips">${chips.join("")}</span>
+        </div>
+        <div class="diff-body" style="display:${r.reachable === false ? "none" : ""}">
+          ${r.reachable === false ? '<div class="diff-lbl" style="color:var(--err)">' + esc(r.error || "无法连接") + "</div>" : ""}
+          <div>
+            <div class="diff-lbl">共享配置 config.shared.toml</div>
+            <div class="diff-pre" id="sd-${esc(name)}"></div>
+          </div>
+          <div>
+            <div class="diff-lbl">skills 文件差异（+ 本地有/远端无，- 远端有/本地无）</div>
+            <div class="diff-pre" id="sk-${esc(name)}"></div>
+          </div>
+          <div>
+            <div class="diff-lbl">模型目录 cc-switch-model-catalog.json</div>
+            <div class="diff-pre" id="ct-${esc(name)}"></div>
+          </div>
+        </div>`;
+      box.appendChild(card);
+      renderDiff(card.querySelector("#sd-" + CSS.escape(name)), r.shared_diff);
+      renderDiff(card.querySelector("#sk-" + CSS.escape(name)), r.skills_diff);
+      renderDiff(card.querySelector("#ct-" + CSS.escape(name)), r.catalog_diff);
+      card.querySelector(".diff-head").addEventListener("click", () => {
+        const body = card.querySelector(".diff-body");
+        body.style.display = body.style.display === "none" ? "" : "none";
+      });
+    });
+    toast("预览完成，点击标题展开/收起差异", "ok");
+  } catch (e) { box.innerHTML = '<span class="empty-tip">预览失败：' + esc(e.message) + "</span>"; }
+}
+
+async function doSync() {
+  const targets = selectedTargets();
+  if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
+  if (!confirm("确定同步到：" + targets.join("、") + " ？\n建议先点「② 预览差异」确认改动。")) return;
+  try {
+    await api("/api/sync", { method: "POST", body: JSON.stringify({ targets }) });
+    toast("同步任务已启动，见日志", "ok");
+    pollLog(); await waitIdle(); await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function doTest() {
+  const targets = selectedTargets();
+  if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
+  try {
+    await api("/api/test", { method: "POST", body: JSON.stringify({ targets }) });
+    toast("连接测试已启动，见日志", "ok");
+    pollLog(); await waitIdle(); await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function doRestart() {
+  const targets = selectedTargets();
+  if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
+  if (!confirm("确定重启 " + targets.join("、") + " 上的 Codex app-server？\n会短暂断开该服务器上的远程会话；重启后模型列表才会重新加载。")) return;
+  try {
+    await api("/api/restart", { method: "POST", body: JSON.stringify({ targets }) });
+    toast("重启任务已启动，见日志", "ok");
+    pollLog(); await waitIdle(); await refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+/* ---------------- log ---------------- */
+function appendLog(lines) {
+  const box = $("log");
+  if (box.querySelector(".log-empty")) box.innerHTML = "";
+  lines.forEach(l => {
+    const div = document.createElement("div");
+    div.className = "l-line l-" + (l.level || "info");
+    div.innerHTML = '<span class="t">[' + esc(l.t) + "]</span>" +
+      (l.target ? '<span class="tg">[' + esc(l.target) + "]</span>" : "") +
+      esc(l.msg);
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+async function pollLog() {
+  if (POLLING) return;
+  POLLING = true;
+  try {
+    while (POLLING) {
+      const d = await api("/api/log?since=" + LOG_SEQ);
+      if (d.lines && d.lines.length) { appendLog(d.lines); LOG_SEQ = d.next; }
+      await new Promise(r => setTimeout(r, 700));
+    }
+  } catch (e) { /* server may be restarting */ }
+  POLLING = false;
+}
+
+function waitIdle() {
+  return new Promise(resolve => {
+    const t = setInterval(async () => {
+      try {
+        const st = await api("/api/status");
+        if (!st.running.sync && !st.running.test && !st.running.restart) { clearInterval(t); resolve(); }
+      } catch (e) { /* ignore */ }
+    }, 900);
+  });
+}
+
+async function refresh() {
+  try {
+    const st = await api("/api/status");
+    renderStatus(st);
+  } catch (e) {
+    $("bindPill").classList.add("off");
+    $("bindTxt").textContent = "离线";
+    toast("无法连接本地服务：" + e.message, "err");
+  }
+}
+
+/* ---------------- settings ---------------- */
+async function saveSettings() {
+  const sharedKeys = $("inSharedKeys").value.split(/[,，\s]+/).filter(Boolean);
+  try {
+    const d = await api("/api/settings", { method: "POST", body: JSON.stringify({
+      codex_home: $("inCodexHome").value.trim(),
+      sync_model: $("tgModel").checked,
+      sync_skills: $("tgSkills").checked,
+      sync_catalog: $("tgCatalog").checked,
+      mirror_skills: $("tgMirror").checked,
+      shared_keys: sharedKeys,
+    }) });
+    toast("设置已保存", "ok");
+    renderStatus(d.status || STATE);
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function detectHome() {
+  try {
+    const d = await api("/api/detect");
+    const pick = (d.existing && d.existing[0]) || (d.candidates && d.candidates[0]) || "";
+    if (pick) {
+      $("inCodexHome").value = pick;
+      toast("已填入 " + pick + "（点「保存设置」生效）", "ok");
+    } else {
+      toast("未检测到，请手动填写 .codex 路径", "warn");
+    }
+  } catch (e) { toast(e.message, "err"); }
+}
+
+/* ---------------- events ---------------- */
+$("btnAddServer").onclick = () => openModal(null);
+$("btnModalClose").onclick = closeModal;
+$("btnModalCancel").onclick = closeModal;
+$("btnModalSave").onclick = saveTarget;
+$("btnTestInModal").onclick = testInModal;
+$("modalBackdrop").addEventListener("click", e => { if (e.target === $("modalBackdrop")) closeModal(); });
+document.querySelectorAll("#authSeg button").forEach(b => b.onclick = () => setAuthSeg(b.dataset.auth));
+$("btnExtract").onclick = doExtract;
+$("btnPreview").onclick = doPreview;
+$("btnSync").onclick = doSync;
+$("btnTest").onclick = doTest;
+$("btnRestart").onclick = doRestart;
+$("btnSelectAll").onclick = () => {
+  const list = (STATE && STATE.targets) || [];
+  const allOn = list.length > 0 && selected.size === list.length;
+  selected = allOn ? new Set() : new Set(list.map(t => t.name));
+  saveSelected(selected);
+  renderServers(STATE);
+};
+$("btnClearLog").onclick = () => { $("log").innerHTML = '<span class="log-empty">已清空</span>'; };
+$("btnSaveSettings").onclick = saveSettings;
+$("btnDetect").onclick = detectHome;
+
+refresh();
+pollLog();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

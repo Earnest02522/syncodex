@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# local runtime data (never commit these)
+config.json
+state.json
+config.shared.toml
+skills.tar
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,26 @@
+{
+  "port": 8765,
+  "codex_home": "/home/you/.codex",
+  "catalog_file": "cc-switch-model-catalog.json",
+  "sync_model": true,
+  "sync_skills": true,
+  "sync_catalog": true,
+  "mirror_skills": true,
+  "shared_keys": ["model", "model_reasoning_effort", "disable_response_storage", "model_catalog_json", "auto_review_model_override"],
+  "targets": [
+    {
+      "name": "my-server",
+      "host": "192.168.1.10",
+      "port": 22,
+      "username": "root",
+      "auth": "key",
+      "key_path": "~/.ssh/id_ed25519",
+      "passphrase": "",
+      "password": "",
+      "codex_dir": "/root/.codex",
+      "node_path": "",
+      "codex_path": "",
+      "restart_script": ""
+    }
+  ]
+}

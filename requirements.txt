@@ -1,0 +1,4 @@
+# Optional: only needed for password-based SSH auth (or encrypted private keys
+# without an ssh-agent). Key-based auth works with the system OpenSSH client and
+# needs no installation at all.
+paramiko>=3.4
