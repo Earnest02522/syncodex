@@ -659,7 +659,7 @@ def sync_skills(b, target_name, cd):
             "rm -rf skills",
             "mkdir -p skills",
             "[ -d sync/.system ] && mv sync/.system skills/.system || true",
-            "tar -xf sync/skills.tar -C skills",
+            "tar -xf sync/skills.tar -C skills --strip-components=1",
             "rm -f sync/skills.tar",
             "echo SKILLS_OK",
         ]) + "\n"
@@ -668,7 +668,7 @@ def sync_skills(b, target_name, cd):
             "set -u",
             f"cd {cd} || exit 1",
             "mkdir -p skills sync",
-            "tar -xf sync/skills.tar -C skills",
+            "tar -xf sync/skills.tar -C skills --strip-components=1",
             "rm -f sync/skills.tar",
             "echo SKILLS_OK",
         ]) + "\n"
