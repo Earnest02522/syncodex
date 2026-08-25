@@ -246,7 +246,7 @@ def local_skills_list():
                 if rel.startswith(".system/"):
                     continue
                 files.append(rel)
-    return files
+    return sorted(files)
 
 
 def catalog_slugs(text):
@@ -579,7 +579,7 @@ def preview_target(name, target):
                                        "本地 config.shared.toml",
                                        f"{name}:config.shared.toml")
         lf = local_skills_list()
-        rf = remote_skills_list(b, cd)
+        rf = sorted(set(remote_skills_list(b, cd)))
         res["skills_diff"] = diff_text(lf, rf,
                                        f"本地 skills ({len(lf)} 文件)",
                                        f"{name} skills ({len(rf)} 文件)")
