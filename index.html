@@ -662,6 +662,7 @@ function closeModal() { $("modalBackdrop").classList.remove("open"); editingName
 function setAuthSeg(auth) {
   document.querySelectorAll("#authSeg button").forEach(b => b.classList.toggle("on", b.dataset.auth === auth));
   const isPass = auth === "password";
+  $("fKeyWrap").style.display = isPass ? "none" : "";
   $("fPassWrap").style.display = isPass ? "" : "none";
   $("fPhraseWrap").style.display = isPass ? "none" : "";
 }
@@ -670,15 +671,16 @@ async function saveTarget() {
   const name = $("fName").value.trim();
   if (!name) { toast("请填写服务器名称", "err"); return; }
   if (!$("fHost").value.trim()) { toast("请填写主机地址", "err"); return; }
+  const auth = document.querySelector("#authSeg button.on").dataset.auth;
   const target = {
     name,
     host: $("fHost").value.trim(),
     port: parseInt($("fPort").value || "22", 10) || 22,
     username: $("fUser").value.trim() || "root",
-    auth: document.querySelector("#authSeg button.on").dataset.auth,
-    key_path: $("fKey").value.trim(),
-    password: $("fPass").value,
-    passphrase: $("fPhrase").value,
+    auth,
+    key_path: auth === "key" ? $("fKey").value.trim() : "",
+    password: auth === "password" ? $("fPass").value : "",
+    passphrase: auth === "key" ? $("fPhrase").value : "",
     codex_dir: $("fCodexDir").value.trim() || "/root/.codex",
     node_path: $("fNode").value.trim(),
     codex_path: $("fCodex").value.trim(),
