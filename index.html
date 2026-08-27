@@ -7,6 +7,7 @@
 <style>
   :root{
     --bg:#f2f2f7;
+    --navbg:rgba(242,242,247,.82);
     --railbg:#ffffff;
     --card:#ffffff;
     --card2:#f8f8fa;
@@ -20,13 +21,14 @@
     --green:#34c759; --red:#ff3b30; --orange:#ff9500; --teal:#30b0c7;
     --shadow:0 1px 3px rgba(0,0,0,.05), 0 10px 30px rgba(0,0,0,.09);
     --radius:12px;
-    --railw:236px;
+    --railw:228px;
     --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
     --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",monospace;
   }
   @media (prefers-color-scheme: dark){
     :root{
       --bg:#000000;
+      --navbg:rgba(0,0,0,.78);
       --railbg:#121214;
       --card:#1c1c1e;
       --card2:#2c2c2e;
@@ -43,41 +45,29 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
-  body{
-    background:var(--bg); color:var(--label);
-    font:15px/1.5 var(--sans); letter-spacing:.1px;
-    -webkit-font-smoothing:antialiased;
-  }
+  body{background:var(--bg); color:var(--label); font:15px/1.5 var(--sans); letter-spacing:.1px; -webkit-font-smoothing:antialiased}
   ::selection{background:var(--blue-soft)}
   a{color:var(--blue); text-decoration:none}
   button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
   button:disabled{opacity:.4; cursor:not-allowed}
   code,pre{font-family:var(--mono)}
 
-  /* ============ 布局：左栏 + 内容 ============ */
-  .shell{display:flex; min-height:100vh}
-  .rail{
-    width:var(--railw); flex:none; position:sticky; top:0; height:100vh;
-    background:var(--railbg); border-right:1px solid var(--sep);
-    display:flex; flex-direction:column; padding:16px 12px; overflow:auto;
-  }
-  .rail-brand{display:flex; align-items:center; gap:9px; padding:2px 8px 16px}
-  .rail-brand .nm{font:800 19px var(--mono); letter-spacing:.3px}
+  /* ============ 左侧步骤栏 ============ */
+  .rail{position:fixed; left:0; top:0; bottom:0; width:var(--railw); background:var(--railbg);
+    border-right:1px solid var(--sep); display:flex; flex-direction:column; padding:16px 12px; overflow:auto; z-index:60}
+  .rail-brand{display:flex; align-items:center; gap:9px; padding:2px 8px 14px}
+  .rail-brand .nm{font:800 18px var(--mono); letter-spacing:.3px}
   .rail-brand .nm em{font-style:normal; color:var(--blue)}
-  .rail-brand .tag{font-size:11px; color:var(--label3); line-height:1.3; margin-top:1px}
+  .rail-brand .tag{font-size:11px; color:var(--label3); line-height:1.3}
   .rail-nav{display:flex; flex-direction:column; gap:3px; flex:1}
-  .rail-sep{height:1px; background:var(--sep); margin:10px 8px}
-  .rail-group{font-size:11px; color:var(--label3); letter-spacing:.6px; text-transform:uppercase; padding:2px 10px 6px}
-  .rail-item{
-    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
-    padding:10px 11px; border-radius:10px; color:var(--label2); font-size:14px; font-weight:500;
-    transition:background .12s, color .12s;
-  }
+  .rail-group{font-size:11px; color:var(--label3); letter-spacing:.6px; text-transform:uppercase; padding:4px 10px 6px}
+  .rail-item{display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:10px 11px; border-radius:10px; color:var(--label2); font-size:14px; font-weight:500; transition:background .12s, color .12s}
   .rail-item:hover{background:var(--fill)}
   .rail-item .rn{width:24px; height:24px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
     font:600 12.5px var(--mono); color:var(--label3); border:1.5px solid var(--sep2); transition:all .15s}
   .rail-item .rn svg{width:13px; height:13px; display:none}
-  .rail-item .st{margin-left:auto; flex:none; display:flex; align-items:center}
+  .rail-item .st{margin-left:auto; flex:none}
   .rail-item .st .ck{width:17px; height:17px; border-radius:50%; display:none; align-items:center; justify-content:center; background:var(--green)}
   .rail-item .st .ck svg{width:10px; height:10px}
   .rail-item.active{background:var(--blue-soft); color:var(--blue)}
@@ -94,40 +84,48 @@
   .pill.off .dot{background:var(--red); box-shadow:0 0 6px var(--red)}
   .rail-foot a{font-size:12.5px}
 
-  .content{flex:1; min-width:0; display:flex; flex-direction:column}
-  .content-inner{max-width:820px; width:100%; margin:0 auto; padding:22px 22px 10px}
+  /* ============ 右侧常驻日志面板 ============ */
+  .log-rail{position:fixed; right:0; top:0; bottom:0; width:360px; background:var(--card2);
+    border-left:1px solid var(--sep); display:flex; flex-direction:column; z-index:60}
+  .log-rail .log-head{display:flex; align-items:center; justify-content:space-between;
+    padding:13px 16px; border-bottom:1px solid var(--sep); flex:none}
+  .log-rail .log-head .tt{font:600 13px var(--sans); color:var(--label); text-transform:uppercase; letter-spacing:.6px}
+  .log-rail .log{flex:1; height:auto; overflow:auto; padding:12px 14px; font:12.5px/1.8 var(--mono); border:none; box-shadow:none}
+  .log .t{color:var(--label3); margin-right:8px}
+  .log .tg{color:var(--blue); margin-right:6px}
+  .log .l-info{color:var(--label2)}
+  .log .l-ok{color:var(--green)}
+  .log .l-warn{color:var(--orange)}
+  .log .l-err{color:var(--red)}
+  .log .l-line{white-space:pre-wrap; word-break:break-all}
 
-  /* ============ 面板切换 ============ */
-  .panel{display:none; animation:fadein .18s ease}
-  .panel.active{display:block}
-  @keyframes fadein{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
-  .panel-head{display:flex; align-items:flex-start; gap:12px; margin-bottom:16px}
-  .panel-head .big{width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; flex:none;
-    display:flex; align-items:center; justify-content:center; font:600 16px var(--mono)}
-  .panel-head .big.ok{background:var(--green)}
-  .panel-head h2{font-size:24px; font-weight:800; letter-spacing:-.3px; line-height:1.2}
-  .panel-head .sub{font-size:13.5px; color:var(--label2); margin-top:3px}
-
-  /* 首启检测提示条 */
-  .warn-banner{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    background:rgba(255,149,0,.12); border:1px solid rgba(255,149,0,.45);
-    border-radius:var(--radius); padding:13px 16px; margin-bottom:16px}
-  .warn-banner .warn-title{font-weight:700; color:var(--orange); font-size:14px}
-  .warn-banner .warn-text{font-size:13px; color:var(--label2); margin-top:2px; word-break:break-all}
-  .warn-banner .warn-actions{display:flex; gap:8px; flex:none}
-
-  /* ============ 卡片 ============ */
+  /* ============ 内容区 ============ */
+  .content{margin-left:var(--railw); margin-right:360px; min-height:100vh}
+  .nav{position:sticky; top:0; z-index:50; background:var(--navbg); backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%); border-bottom:1px solid var(--sep)}
+  .nav-inner{max-width:820px; margin:0 auto; padding:13px 18px 11px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px}
+  .nav h1{font-size:26px; font-weight:800; letter-spacing:-.4px; line-height:1.15}
+  .nav h1 em{font-style:normal; color:var(--blue)}
+  .nav .tag{color:var(--label2); font-size:12.5px; margin-top:1px}
+  .nav-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none}
+  main{max-width:820px; margin:0 auto; padding:18px 20px 30px}
+  section{margin-bottom:26px}
+  .sec-title{font-size:13px; font-weight:600; color:var(--label2); letter-spacing:.4px; margin:0 18px 7px; text-transform:uppercase}
   .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; border:1px solid var(--sep)}
   .card + .card{margin-top:14px}
+
+  /* 面板切换 */
+  .panel{display:none; animation:fadein .16s ease}
+  .panel.active{display:block}
+  @keyframes fadein{from{opacity:0; transform:translateY(3px)} to{opacity:1; transform:none}}
+
+  /* 分组列表 */
   .list{display:flex; flex-direction:column}
   .row{display:flex; align-items:center; gap:12px; padding:13px 16px; min-height:56px; position:relative}
   .row + .row::before{content:""; position:absolute; top:0; left:16px; right:0; height:1px; background:var(--sep)}
   .row .main{flex:1; min-width:0}
   .row .title{font-size:16.5px; font-weight:500}
   .row .sub{font-size:13px; color:var(--label2); margin-top:1px; word-break:break-all}
-  .row .mono{font-family:var(--mono); font-size:13px}
-  .chev{color:var(--label3); font-size:18px; font-family:var(--mono); flex:none}
-
   .srv-row{cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .12s}
   .srv-row:hover{background:var(--card2)}
   .srv-row.sel{background:var(--blue-soft)}
@@ -136,7 +134,7 @@
   .srv-row.sel .check-circle::after{content:""; width:11px; height:6px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(-45deg) translate(1px,-1px)}
   .led{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--label3); vertical-align:1px; margin-left:6px}
   .led.ok{background:var(--green)} .led.err{background:var(--red)}
-  .srv-name{font-size:16.5px; font-weight:600; font-family:var(--mono)}
+  .srv-name{font-size:16px; font-weight:600; font-family:var(--mono)}
   .srv-meta{font-size:12.5px; color:var(--label2); font-family:var(--mono); margin-top:2px; word-break:break-all}
   .badges{display:flex; flex-wrap:wrap; gap:5px; margin-top:7px}
   .badge{font:11px var(--mono); color:var(--label2); background:var(--fill); border-radius:999px; padding:2px 8px; border:1px solid var(--sep)}
@@ -152,7 +150,6 @@
   .row-add .plus{font-size:20px; font-weight:600; margin-right:2px}
   .empty{padding:20px 18px; text-align:center; color:var(--label2); font-size:14px}
 
-  /* 按钮 */
   .btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px;
     padding:0 18px; border-radius:12px; font-size:15.5px; font-weight:600; transition:background .12s, transform .05s}
   .btn:active{transform:scale(.985)}
@@ -166,7 +163,12 @@
   .btn-sm{min-height:36px; padding:0 14px; font-size:13.5px; border-radius:10px}
   .btn-row{display:flex; gap:9px; flex-wrap:wrap}
   .btn-row .btn{flex:1; min-width:120px}
-  .step-body{padding:0 0 4px; display:flex; flex-direction:column; gap:13px}
+  .step-head{display:flex; align-items:center; gap:10px; padding:15px 16px 4px}
+  .step-head .num{width:27px; height:27px; border-radius:50%; background:var(--blue); color:#fff; font:600 14px var(--mono); display:flex; align-items:center; justify-content:center; flex:none}
+  .step-head .num.ok{background:var(--green)}
+  .step-head .tt{font-size:17px; font-weight:700}
+  .step-head .st{font-size:12.5px; color:var(--label2); margin-top:1px}
+  .step-body{padding:12px 16px 16px; display:flex; flex-direction:column; gap:13px}
   .hint{font-size:13px; color:var(--label2); line-height:1.55}
 
   pre.code{background:var(--fill); border:1px solid var(--sep); border-radius:10px; padding:12px;
@@ -197,19 +199,6 @@
   .diff-pre .hl{color:var(--label3)}
   .diff-pre .note{color:var(--label2)}
 
-  /* 日志坞（常驻底部） */
-  .logdock{margin-top:22px}
-  .logdock .head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
-  .logdock .head .tt{font-size:13px; font-weight:600; color:var(--label2); letter-spacing:.4px; text-transform:uppercase}
-  .log{height:230px; overflow:auto; padding:12px 14px; font:12.5px/1.8 var(--mono); background:var(--card)}
-  .log .t{color:var(--label3); margin-right:8px}
-  .log .tg{color:var(--blue); margin-right:6px}
-  .log .l-info{color:var(--label2)}
-  .log .l-ok{color:var(--green)}
-  .log .l-warn{color:var(--orange)}
-  .log .l-err{color:var(--red)}
-  .log .l-line{white-space:pre-wrap; word-break:break-all}
-
   .toggle{display:flex; align-items:center; gap:12px; flex:1; min-height:44px; cursor:pointer}
   .toggle input{display:none}
   .toggle .tk{width:51px; height:31px; border-radius:999px; background:var(--sep2); position:relative; transition:background .2s; flex:none; margin-left:auto}
@@ -229,6 +218,15 @@
   input::placeholder,textarea::placeholder{color:var(--label3)}
   textarea{font-size:13px; line-height:1.5; resize:vertical}
   .f2{display:grid; grid-template-columns:1fr 1fr; gap:0 14px}
+  @media (max-width:560px){ .f2{grid-template-columns:1fr} }
+
+  /* 首启检测提示条 */
+  .warn-banner{display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:rgba(255,149,0,.12); border:1px solid rgba(255,149,0,.45);
+    border-radius:var(--radius); padding:13px 16px; margin-bottom:16px}
+  .warn-banner .warn-title{font-weight:700; color:var(--orange); font-size:14px}
+  .warn-banner .warn-text{font-size:13px; color:var(--label2); margin-top:2px; word-break:break-all}
+  .warn-banner .warn-actions{display:flex; gap:8px; flex:none}
 
   .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100;
     display:flex; align-items:flex-end; justify-content:center;
@@ -265,17 +263,18 @@
     .modal{border-radius:18px; transform:translateY(10px) scale(.98)}
     .grabber{display:none}
   }
-  @media (max-width:860px){
+  @media (max-width:960px){
     :root{--railw:auto}
-    .shell{flex-direction:column}
-    .rail{position:static; height:auto; width:100%; border-right:none; border-bottom:1px solid var(--sep); padding:10px}
+    .rail{position:static; width:100%; height:auto; border-right:none; border-bottom:1px solid var(--sep); padding:10px}
     .rail-brand{display:none}
     .rail-nav{flex-direction:row; flex-wrap:wrap; gap:4px}
-    .rail-sep,.rail-group{display:none}
+    .rail-group,.rail-foot{display:none}
     .rail-item{width:auto; padding:8px 10px; font-size:13px}
     .rail-item .rn{width:21px; height:21px}
-    .rail-foot{display:none}
-    .content-inner{padding:16px 14px 8px}
+    .log-rail{left:0; right:0; top:auto; bottom:0; width:auto; height:220px;
+      border-left:none; border-top:1px solid var(--sep)}
+    .content{margin-left:0; margin-right:0; padding-bottom:220px}
+    .nav-inner{padding:10px 14px}
   }
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation:none!important; transition:none!important}
@@ -283,173 +282,169 @@
 </style>
 </head>
 <body>
-<div class="shell">
-
-  <!-- 左侧步骤导航 -->
-  <aside class="rail">
-    <div class="rail-brand">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none"><rect x="2" y="2" width="26" height="26" rx="7" stroke="#007aff" stroke-width="1.7"/><path d="M9 12h12M9 12l3.5-3.5M9 12l3.5 3.5" stroke="#007aff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 18H9M21 18l-3.5-3.5M21 18l-3.5 3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <div><div class="nm">sync<em>odex</em></div><div class="tag">Codex → SSH 同步</div></div>
-    </div>
-    <nav class="rail-nav">
-      <div class="rail-group">同步流程</div>
-      <button class="rail-item active" data-step="1">
-        <span class="rn"><span>1</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        连接服务器 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
-      </button>
-      <button class="rail-item" data-step="2">
-        <span class="rn"><span>2</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        提取共享配置 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
-      </button>
-      <button class="rail-item" data-step="3">
-        <span class="rn"><span>3</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        预览差异 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
-      </button>
-      <button class="rail-item" data-step="4">
-        <span class="rn"><span>4</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        同步 + 重启 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
-      </button>
-      <div class="rail-sep"></div>
-      <button class="rail-item" data-panel="settings">
-        <span class="rn" style="border:none; background:var(--fill)">⚙</span>
-        本地与同步设置
-      </button>
-    </nav>
-    <div class="rail-foot">
-      <span class="pill" id="bindPill"><span class="dot"></span><span id="bindTxt">127.0.0.1:—</span></span>
-      <a href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener">GitHub ↗</a>
-    </div>
-  </aside>
-
-  <!-- 右侧内容 -->
-  <div class="content">
-    <div class="content-inner">
-
-      <!-- 首启/路径缺失检测提示 -->
-      <div class="warn-banner" id="homeWarn" style="display:none">
-        <div style="flex:1; min-width:0">
-          <div class="warn-title">⚠ 未找到本地 Codex 文件夹</div>
-          <div class="warn-text" id="homeWarnText"></div>
-        </div>
-        <div class="warn-actions">
-          <button class="btn btn-secondary btn-sm" id="btnUseDetected">使用检测到的路径</button>
-          <button class="btn btn-gray btn-sm" id="btnIgnoreHomeWarn">知道了</button>
-        </div>
-      </div>
-
-      <!-- ① 连接服务器 -->
-      <section class="panel active" id="panel-step1">
-        <div class="panel-head">
-          <span class="big" id="h1num">1</span>
-          <div><h2>连接服务器</h2><div class="sub" id="h1sub">添加 SSH 服务器，选择要同步的目标</div></div>
-        </div>
-        <div class="card">
-          <div class="list" id="serverList"></div>
-          <div class="row row-add" id="btnAddServer"><span class="plus">＋</span> 添加服务器</div>
-        </div>
-        <div class="hint" style="margin-top:12px; padding:0 4px">点每行可勾选/取消（可多选）。完成 ① 后会自动进入 ② 提取共享配置。</div>
-      </section>
-
-      <!-- ② 提取共享配置 -->
-      <section class="panel" id="panel-step2">
-        <div class="panel-head">
-          <span class="big" id="h2num">2</span>
-          <div><h2>提取共享配置</h2><div class="sub" id="h2sub">从本地 config.toml 抽出可移植键（provider 永不进入）</div></div>
-        </div>
-        <div class="card" style="padding:18px 16px">
-          <div class="step-body">
-            <button class="btn btn-primary" id="btnExtract" style="width:100%">提取共享配置</button>
-            <div class="hint" id="extractNote">生成 config.shared.toml；同步时与每台服务器自己的 provider 段拼接。</div>
-            <details class="code-box">
-              <summary>查看当前 config.shared.toml</summary>
-              <pre class="code" id="sharedBox" style="margin-top:6px">（尚未提取）</pre>
-            </details>
-          </div>
-        </div>
-      </section>
-
-      <!-- ③ 预览差异 -->
-      <section class="panel" id="panel-step3">
-        <div class="panel-head">
-          <span class="big" id="h3num">3</span>
-          <div><h2>预览差异</h2><div class="sub">对比共享配置 / skills / 模型目录，确认后再同步</div></div>
-        </div>
-        <div class="step-body" style="gap:13px">
-          <button class="btn btn-primary" id="btnPreview" style="width:100%">预览差异</button>
-          <div id="diffBox" style="display:grid; gap:12px">
-            <div class="hint">需先在 ① 中勾选服务器（当前 <b id="selCnt">0</b> 台）。预览完成后自动进入 ④ 同步。</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ④ 同步 + 重启 -->
-      <section class="panel" id="panel-step4">
-        <div class="panel-head">
-          <span class="big" id="h4num">4</span>
-          <div><h2>同步 + 重启</h2><div class="sub" id="h4sub">当前未选择服务器</div></div>
-        </div>
-        <div class="card" style="padding:18px 16px">
-          <div class="step-body">
-            <div class="btn-row">
-              <button class="btn btn-secondary" id="btnClearSel" style="flex:1">全不选</button>
-              <button class="btn btn-secondary" id="btnTest" style="flex:1">测试连接</button>
-            </div>
-            <button class="btn btn-primary" id="btnSync" style="width:100%; min-height:50px; font-size:17px">③ 同步到所选服务器</button>
-            <div class="btn-row">
-              <button class="btn btn-danger" id="btnRestart" style="flex:1">重启远端进程</button>
-              <button class="btn btn-gray" id="btnClearLog" style="flex:1">清空日志</button>
-            </div>
-            <div class="hint">同步只改配置 / skills / 模型目录；同步后建议点「重启远端进程」让远端模型列表立即刷新。</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 设置 -->
-      <section class="panel" id="panel-settings">
-        <div class="panel-head">
-          <span class="big" style="background:var(--fill); color:var(--label)">⚙</span>
-          <div><h2>本地与同步设置</h2><div class="sub">本地 Codex 文件夹 · 同步内容 · 共享键</div></div>
-        </div>
-        <div class="card">
-          <div class="list">
-            <div class="row" style="display:block; padding-bottom:4px">
-              <div class="field" style="margin:0 0 6px"><label>本地 Codex 文件夹 <span class="req">*</span></label>
-                <div style="display:flex; gap:8px">
-                  <input type="text" id="inCodexHome" spellcheck="false" placeholder="C:\Users\you\.codex 或 /home/you/.codex">
-                  <button class="btn btn-secondary btn-sm" id="btnDetect" style="flex:none">自动检测</button>
-                </div>
-              </div>
-            </div>
-            <div class="row"><div class="main"><div class="title">同步 model 模型</div><div class="sub">共享键含 model / model_reasoning_effort</div></div><label class="toggle"><input type="checkbox" id="tgModel"><span class="tk"></span></label></div>
-            <div class="row"><div class="main"><div class="title">同步 skills</div><div class="sub">排除桌面内置 .system</div></div><label class="toggle"><input type="checkbox" id="tgSkills"><span class="tk"></span></label></div>
-            <div class="row"><div class="main"><div class="title">同步模型目录</div><div class="sub">cc-switch-model-catalog.json</div></div><label class="toggle"><input type="checkbox" id="tgCatalog"><span class="tk"></span></label></div>
-            <div class="row"><div class="main"><div class="title">镜像删除远端多余文件</div><div class="sub">远端 skills 与本地完全一致（多余文件会被删除）</div></div><label class="toggle"><input type="checkbox" id="tgMirror"><span class="tk"></span></label></div>
-            <div class="row" style="display:block">
-              <div class="field" style="margin:0 0 4px"><label>共享键（进阶，逗号分隔）</label>
-                <input type="text" id="inSharedKeys" spellcheck="false">
-              </div>
-            </div>
-            <div class="row"><div class="main"><div class="title">传输环境</div><div class="sub" id="transportInfo">—</div></div></div>
-            <div class="row" style="padding-top:14px; padding-bottom:16px">
-              <button class="btn btn-primary" id="btnSaveSettings" style="min-height:40px">保存设置</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 常驻日志 -->
-      <div class="logdock">
-        <div class="head">
-          <span class="tt">运行日志</span>
-          <button class="btn btn-gray btn-sm" id="btnClearLogTop" style="min-height:28px; padding:0 10px">清空</button>
-        </div>
-        <div class="card" style="overflow:hidden">
-          <div class="log" id="log"><span style="color:var(--label3)">等待操作…</span></div>
-        </div>
-      </div>
-
-    </div>
+<!-- 右侧常驻日志面板 -->
+<div class="log-rail">
+  <div class="log-head">
+    <span class="tt">运行日志</span>
+    <button class="btn btn-gray btn-sm" id="btnClearLog" style="min-height:28px; padding:0 10px">清空</button>
   </div>
+  <div class="log" id="log"><span style="color:var(--label3)">等待操作…</span></div>
+</div>
+
+<!-- 左侧步骤栏 -->
+<aside class="rail">
+  <div class="rail-brand">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none"><rect x="2" y="2" width="26" height="26" rx="7" stroke="#007aff" stroke-width="1.7"/><path d="M9 12h12M9 12l3.5-3.5M9 12l3.5 3.5" stroke="#007aff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 18H9M21 18l-3.5-3.5M21 18l-3.5 3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div class="nm">sync<em>odex</em></div><div class="tag">Codex → SSH 同步</div></div>
+  </div>
+  <nav class="rail-nav">
+    <div class="rail-group">开始</div>
+    <button class="rail-item active" data-panel="settings">
+      <span class="rn" style="border:none; background:var(--fill)">⚙</span>
+      本地与同步设置
+    </button>
+    <div class="rail-group">同步流程</div>
+    <button class="rail-item" data-panel="step1">
+      <span class="rn"><span>1</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      连接服务器 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
+    </button>
+    <button class="rail-item" data-panel="step2">
+      <span class="rn"><span>2</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      提取共享配置 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
+    </button>
+    <button class="rail-item" data-panel="step3">
+      <span class="rn"><span>3</span><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      预览 + 同步 <span class="st"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5 6.5 12 13 4.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
+    </button>
+  </nav>
+  <div class="rail-foot">
+    <span class="pill" id="bindPill"><span class="dot"></span><span id="bindTxt">127.0.0.1:—</span></span>
+    <a href="https://github.com/Earnest02522/syncodex" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</aside>
+
+<div class="content">
+  <header class="nav">
+    <div class="nav-inner">
+      <div>
+        <h1>sync<em>odex</em></h1>
+        <div class="tag">把本地 Codex 配置 / skills / 模型目录同步到 SSH 服务器</div>
+      </div>
+      <div class="nav-right">
+        <span class="pill" id="navPill"><span class="dot"></span><span id="navTxt">127.0.0.1:—</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 首启/路径缺失检测提示 -->
+    <div class="warn-banner" id="homeWarn" style="display:none">
+      <div style="flex:1; min-width:0">
+        <div class="warn-title">⚠ 未找到本地 Codex 文件夹</div>
+        <div class="warn-text" id="homeWarnText"></div>
+      </div>
+      <div class="warn-actions">
+        <button class="btn btn-secondary btn-sm" id="btnUseDetected">使用检测到的路径</button>
+        <button class="btn btn-gray btn-sm" id="btnIgnoreHomeWarn">知道了</button>
+      </div>
+    </div>
+
+    <!-- 设置（第一个面板） -->
+    <section class="panel active" id="panel-settings">
+      <div class="sec-title">本地与同步设置</div>
+      <div class="card">
+        <div class="list">
+          <div class="row" style="display:block; padding-bottom:4px">
+            <div class="field" style="margin:0 0 6px"><label>本地 Codex 文件夹 <span class="req">*</span></label>
+              <div style="display:flex; gap:8px">
+                <input type="text" id="inCodexHome" spellcheck="false" placeholder="C:\Users\you\.codex 或 /home/you/.codex">
+                <button class="btn btn-secondary btn-sm" id="btnDetect" style="flex:none">自动检测</button>
+              </div>
+            </div>
+          </div>
+          <div class="row"><div class="main"><div class="title">同步 model 模型</div><div class="sub">共享键含 model / model_reasoning_effort</div></div><label class="toggle"><input type="checkbox" id="tgModel"><span class="tk"></span></label></div>
+          <div class="row"><div class="main"><div class="title">同步 skills</div><div class="sub">排除桌面内置 .system</div></div><label class="toggle"><input type="checkbox" id="tgSkills"><span class="tk"></span></label></div>
+          <div class="row"><div class="main"><div class="title">同步模型目录</div><div class="sub">cc-switch-model-catalog.json</div></div><label class="toggle"><input type="checkbox" id="tgCatalog"><span class="tk"></span></label></div>
+          <div class="row"><div class="main"><div class="title">镜像删除远端多余文件</div><div class="sub">远端 skills 与本地完全一致（多余文件会被删除）</div></div><label class="toggle"><input type="checkbox" id="tgMirror"><span class="tk"></span></label></div>
+          <div class="row" style="display:block">
+            <div class="field" style="margin:0 0 4px"><label>共享键（进阶，逗号分隔）</label>
+              <input type="text" id="inSharedKeys" spellcheck="false">
+            </div>
+          </div>
+          <div class="row"><div class="main"><div class="title">传输环境</div><div class="sub" id="transportInfo">—</div></div></div>
+          <div class="row" style="padding-top:14px; padding-bottom:16px">
+            <button class="btn btn-primary" id="btnSaveSettings" style="min-height:40px">保存设置</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ① 连接服务器 -->
+    <section class="panel" id="panel-step1">
+      <div class="sec-title">① 连接服务器</div>
+      <div class="card">
+        <div class="step-head">
+          <span class="num" id="h1num">1</span>
+          <div><div class="tt">SSH 服务器</div><div class="st" id="h1sub">还没有服务器，点下方「添加服务器」</div></div>
+        </div>
+        <div class="list" id="serverList"></div>
+        <div class="row row-add" id="btnAddServer"><span class="plus">＋</span> 添加服务器</div>
+        <div class="step-body">
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="btnTest" style="flex:1">测试连接</button>
+          </div>
+          <div class="hint">点每行可勾选/取消（可多选）。添加服务器后可点「测试连接」确认能连通。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 提取共享配置 -->
+    <section class="panel" id="panel-step2">
+      <div class="sec-title">② 提取共享配置</div>
+      <div class="card">
+        <div class="step-head">
+          <span class="num" id="h2num">2</span>
+          <div><div class="tt">提取共享配置</div><div class="st" id="h2sub">从本地 config.toml 抽出可移植键（provider 永不进入）</div></div>
+        </div>
+        <div class="step-body">
+          <button class="btn btn-primary" id="btnExtract">提取共享配置</button>
+          <div class="hint" id="extractNote">生成 config.shared.toml；同步时与每台服务器自己的 provider 段拼接。</div>
+          <details class="code-box">
+            <summary>查看当前 config.shared.toml</summary>
+            <pre class="code" id="sharedBox" style="margin-top:6px">（尚未提取）</pre>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 预览差异 + 同步（同一面板） -->
+    <section class="panel" id="panel-step3">
+      <div class="sec-title">③ 预览差异 · 同步 + 重启</div>
+      <div class="card">
+        <div class="step-head">
+          <span class="num" id="h3num">3</span>
+          <div><div class="tt">同步前预览</div><div class="st" id="h3sub">已选 <b id="selCnt">0</b> 台服务器</div></div>
+        </div>
+        <div class="step-body">
+          <button class="btn btn-primary" id="btnPreview">预览差异</button>
+          <div id="diffBox" style="display:grid; gap:12px">
+            <div class="hint">勾选服务器后点「预览差异」，确认改动后直接点下方同步按钮。</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="step-head">
+          <span class="num" id="h4num">4</span>
+          <div><div class="tt">同步到所选服务器</div><div class="st" id="h4sub">当前未选择服务器</div></div>
+        </div>
+        <div class="step-body">
+          <div class="hint">同步只改配置 / skills / 模型目录；同步后建议重启远端进程让模型列表刷新。</div>
+          <button class="btn btn-primary" id="btnSync" style="min-height:50px; font-size:17px">同步到所选服务器</button>
+          <button class="btn btn-danger" id="btnRestart" style="width:100%">重启远端进程</button>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 
 <!-- 服务器编辑 Sheet -->
@@ -512,8 +507,8 @@ let STATE = null;
 let LOG_SEQ = 0;
 let POLLING = false;
 let PREVIEW_DONE = false;
-let editingName = null;
 let HOME_WARN_DISMISSED = false;
+let editingName = null;
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts));
@@ -532,30 +527,29 @@ function toast(msg, kind) {
   setTimeout(() => el.remove(), 3800);
 }
 
+/* ---------------- 面板切换（左侧步骤栏，用户自己点） ---------------- */
+function showPanel(panelId) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  const p = document.getElementById(panelId);
+  if (p) p.classList.add("active");
+  document.querySelectorAll(".rail-item[data-panel]").forEach(b => {
+    b.classList.toggle("active", ("panel-" + b.dataset.panel) === panelId);
+  });
+}
+
 function loadSelected() {
   try { return new Set(JSON.parse(localStorage.getItem(SEL_KEY) || "[]")); } catch (e) { return new Set(); }
 }
 function saveSelected(s) { localStorage.setItem(SEL_KEY, JSON.stringify([...s])); }
 let selected = loadSelected();
 
-/* ---------------- 面板 / 步骤切换（左侧导航） ---------------- */
-function showPanel(panelId) {
-  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-  const p = document.getElementById(panelId);
-  if (p) p.classList.add("active");
-  document.querySelectorAll(".rail-item[data-step], .rail-item[data-panel]").forEach(b => {
-    const isStep = b.dataset.step !== undefined;
-    b.classList.toggle("active", (isStep ? "panel-step" + b.dataset.step : "panel-" + b.dataset.panel) === panelId);
-  });
-  window.scrollTo({ top: 0 });
-}
-function showStep(n) { showPanel("panel-step" + n); }
-
 /* ---------------- 渲染 ---------------- */
 function renderStatus(st) {
   STATE = st;
   $("bindTxt").textContent = "127.0.0.1:" + st.port;
+  $("navTxt").textContent = "127.0.0.1:" + st.port;
   $("bindPill").classList.remove("off");
+  $("navPill").classList.remove("off");
   $("inCodexHome").value = st.codex_home || "";
   $("tgModel").checked = !!st.sync_model;
   $("tgSkills").checked = !!st.sync_skills;
@@ -580,7 +574,6 @@ function renderStatus(st) {
 
 function renderHomeWarn(st) {
   const warn = $("homeWarn");
-  if (!warn) return;
   if (st.codex_home_exists === false && !HOME_WARN_DISMISSED) {
     const cur = st.codex_home || "";
     const cands = (st.codex_home_candidates || []).filter(c => c !== cur);
@@ -603,17 +596,22 @@ function stepState(st) {
 
 function renderSteps(st) {
   const done = stepState(st);
-  const headNums = { 1: "h1num", 2: "h2num", 3: "h3num", 4: "h4num" };
+  const items = ["step1", "step2", "step3"];
+  const nums = ["h1num", "h2num", "h3num", "h4num"];
   done.forEach((d, i) => {
-    const item = document.querySelector('.rail-item[data-step="' + (i + 1) + '"]');
-    if (item) item.classList.toggle("done", d);
-    const h = $(headNums[i + 1]);
-    if (h) { h.textContent = d ? "✓" : String(i + 1); h.classList.toggle("ok", d); }
+    const item = document.querySelector('.rail-item[data-panel="' + items[i] + '"]');
+    if (item && i < 3) item.classList.toggle("done", d);
+    const n = $(nums[i]);
+    if (n) { n.textContent = d ? "✓" : String(i + 1); n.classList.toggle("ok", d); }
   });
+  // ④ 同步完成（last_sync 存在）也标记
+  const item4 = document.querySelector('.rail-item[data-panel="step3"]');
+  if (item4 && done[3]) item4.classList.add("done");
   $("h1sub").textContent = (st.targets || []).length
     ? (st.targets || []).length + " 台服务器已配置"
-    : "添加 SSH 服务器，选择要同步的目标";
+    : "还没有服务器，点下方「添加服务器」";
   const sel = selected.size;
+  $("h3sub").innerHTML = "已选 <b>" + sel + "</b> 台服务器" + (sel ? "：" + [...selected].join("、") : "");
   $("h4sub").textContent = sel ? "已选择 " + sel + " 台：" + [...selected].join("、") : "当前未选择服务器";
   $("selCnt").textContent = sel;
   $("btnSync").disabled = sel === 0;
@@ -672,7 +670,6 @@ function renderServers(st) {
     row.querySelector('[data-act="del"]').addEventListener("click", e => { e.stopPropagation(); delTarget(t.name); });
     box.appendChild(row);
   });
-
 }
 
 function selectedTargets() { return [...selected]; }
@@ -726,13 +723,11 @@ async function saveTarget() {
     codex_path: $("fCodex").value.trim(),
     restart_script: $("fRestart").value.trim(),
   };
-  const wasEmpty = (STATE.targets || []).length === 0;
   try {
     await api("/api/targets", { method: "POST", body: JSON.stringify({ target }) });
     toast("服务器已保存：" + name, "ok");
     closeModal();
     await refresh();
-    if (wasEmpty) { setTimeout(() => showStep(2), 350); }  // 完成①后自动进入②
   } catch (e) { toast(e.message, "err"); }
 }
 
@@ -754,17 +749,19 @@ async function testInModal() {
     await api("/api/test", { method: "POST", body: JSON.stringify({ targets: [name] }) });
     toast("连接测试已启动，见日志", "ok");
     pollLog(); await waitIdle(); await refresh();
+    const t = (STATE.targets || []).find(x => x.name === name);
+    if (t) toast(t.reachable === true ? "测试通过：" + name : "测试失败：" + name + "，详见日志",
+                 t.reachable === true ? "ok" : "err");
   } catch (e) { toast(e.message, "err"); }
 }
 
-/* ---------------- 操作 ---------------- */
+/* ---------------- 操作（不自动跳转，用户自己点下一步） ---------------- */
 async function doExtract() {
   try {
     const d = await api("/api/extract", { method: "POST", body: "{}" });
     if (!d.ok) { toast(d.message || "提取失败", "err"); return; }
-    toast("已提取共享配置：" + d.message, "ok");
+    toast("已提取共享配置：" + d.message + "。点左侧「预览 + 同步」继续", "ok");
     await refresh();
-    setTimeout(() => showStep(3), 350);  // 完成②后自动进入③
   } catch (e) { toast(e.message, "err"); }
 }
 
@@ -831,8 +828,7 @@ async function doPreview() {
     });
     PREVIEW_DONE = true;
     renderSteps(STATE);
-    toast("预览完成，点击标题展开/收起差异", "ok");
-    setTimeout(() => showStep(4), 350);  // 完成③后自动进入④
+    toast("预览完成，确认差异后点下方「同步到所选服务器」", "ok");
   } catch (e) {
     box.innerHTML = '<div class="hint">预览失败：' + esc(e.message) + "</div>";
   }
@@ -846,16 +842,24 @@ async function doSync() {
     await api("/api/sync", { method: "POST", body: JSON.stringify({ targets }) });
     toast("同步任务已启动，见日志", "ok");
     pollLog(); await waitIdle(); await refresh();
+    toast("同步任务已结束，详见日志", "ok");
   } catch (e) { toast(e.message, "err"); }
 }
 
 async function doTest() {
   const targets = selectedTargets();
-  if (!targets.length) { toast("请先勾选至少一台服务器", "err"); return; }
+  if (!targets.length) { toast("请先在服务器列表勾选要测试的服务器", "err"); return; }
   try {
     await api("/api/test", { method: "POST", body: JSON.stringify({ targets }) });
     toast("连接测试已启动，见日志", "ok");
     pollLog(); await waitIdle(); await refresh();
+    const okN = [], badN = [];
+    (STATE.targets || []).forEach(t => {
+      if (targets.includes(t.name)) (t.reachable === true ? okN : badN).push(t.name);
+    });
+    if (okN.length && !badN.length) toast("测试通过：" + okN.join("、"), "ok");
+    else if (!okN.length) toast("测试失败：" + (badN.join("、") || targets.join("、")) + "，详见日志", "err");
+    else toast("部分成功：" + okN.join("、") + " 通过，" + badN.join("、") + " 失败，详见日志", "warn");
   } catch (e) { toast(e.message, "err"); }
 }
 
@@ -867,6 +871,7 @@ async function doRestart() {
     await api("/api/restart", { method: "POST", body: JSON.stringify({ targets }) });
     toast("重启任务已启动，见日志", "ok");
     pollLog(); await waitIdle(); await refresh();
+    toast("重启任务已结束，详见日志", "ok");
   } catch (e) { toast(e.message, "err"); }
 }
 
@@ -914,7 +919,9 @@ async function refresh() {
     renderStatus(st);
   } catch (e) {
     $("bindPill").classList.add("off");
+    $("navPill").classList.add("off");
     $("bindTxt").textContent = "离线";
+    $("navTxt").textContent = "离线";
     toast("无法连接本地服务：" + e.message, "err");
   }
 }
@@ -946,9 +953,6 @@ async function detectHome() {
 }
 
 /* ---------------- 事件绑定 ---------------- */
-document.querySelectorAll(".rail-item[data-step]").forEach(b => {
-  b.onclick = () => showStep(parseInt(b.dataset.step, 10));
-});
 document.querySelectorAll(".rail-item[data-panel]").forEach(b => {
   b.onclick = () => showPanel("panel-" + b.dataset.panel);
 });
@@ -965,7 +969,6 @@ $("btnSync").onclick = doSync;
 $("btnTest").onclick = doTest;
 $("btnRestart").onclick = doRestart;
 $("btnClearLog").onclick = () => { $("log").innerHTML = '<span style="color:var(--label3)">已清空</span>'; };
-$("btnClearLogTop").onclick = () => { $("log").innerHTML = '<span style="color:var(--label3)">已清空</span>'; };
 $("btnSaveSettings").onclick = saveSettings;
 $("btnDetect").onclick = detectHome;
 $("btnIgnoreHomeWarn").onclick = () => { HOME_WARN_DISMISSED = true; $("homeWarn").style.display = "none"; };
@@ -977,13 +980,6 @@ $("btnUseDetected").onclick = async () => {
   $("inCodexHome").value = cand;
   HOME_WARN_DISMISSED = true;
   await saveSettings();
-};
-$("btnClearSel").onclick = () => {
-  selected.clear();
-  saveSelected(selected);
-  renderServers(STATE);
-  renderSteps(STATE);
-  toast("已清空选择", "ok");
 };
 
 refresh();
